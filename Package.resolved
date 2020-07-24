@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "TreeSitterJSON",
+        "repositoryURL": "/Users/gustavoordaz/Developer/TreeSitterJSON",
+        "state": {
+          "branch": null,
+          "revision": "cbc106c05ab8b433989b2bad3b8070150be593cd",
+          "version": "0.0.2"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
