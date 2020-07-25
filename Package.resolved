@@ -3,7 +3,7 @@
     "pins": [
       {
         "package": "TreeSitterJSON",
-        "repositoryURL": "/Users/gustavoordaz/Developer/TreeSitterJSON",
+        "repositoryURL": "file:///Users/gustavoordaz/Developer/TreeSitterJSON",
         "state": {
           "branch": null,
           "revision": "1763d96f54868cb2c976f44a721bc02ab818f7fa",
