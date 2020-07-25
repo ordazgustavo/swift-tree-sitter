@@ -10,8 +10,12 @@ import TreeSitter
 public struct TreeCursor {
     var cursor: TSTreeCursor
     
-    init(_ cursor: TSTreeCursor) {
+    public init(_ cursor: TSTreeCursor) {
         self.cursor = cursor
+    }
+    
+    public init() {
+        self.cursor = TSTreeCursor()
     }
     
     /// Get the tree cursor's current [Node].
