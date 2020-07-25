@@ -299,6 +299,11 @@ public struct Node {
         cString?.deallocate()
         return result
     }
+    
+    /// Create a new [TreeCursor] starting from this node.
+    public func walk() -> TreeCursor {
+        TreeCursor(ts_tree_cursor_new(self.node))
+    }
 
     /// Edit this node to keep it in-sync with source code that has been edited.
     ///

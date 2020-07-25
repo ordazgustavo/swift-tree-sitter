@@ -27,4 +27,9 @@ public class Tree {
     public func language() -> Language {
         Language(ts_tree_language(tree)!)
     }
+    
+    /// Create a new [TreeCursor] starting from the root of the tree.
+    public func walk() -> TreeCursor {
+        self.rootNode().walk()
+    }
 }
