@@ -10,7 +10,12 @@ let package = Package(
         .library(
             name: "SwiftTreeSitter",
             targets: ["TreeSitter", "SwiftTreeSitter"]
-        )
+        ),
+        .library(
+            name: "TreeSitterJavaScript",
+            type: .dynamic,
+            targets: ["TreeSitterJavaScript"]
+        ),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -30,6 +35,11 @@ let package = Package(
                 "./src/unicode/LICENSE",
                 "./src/unicode/README.md",
             ]
+        ),
+        .target(
+            name: "TreeSitterJavaScript",
+            dependencies: [],
+            path: "Sources/TreeSitterJavaScript"
         ),
         .target(
             name: "SwiftTreeSitter",
