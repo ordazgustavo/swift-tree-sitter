@@ -36,17 +36,17 @@ public class Query {
     
     
     /// Get the number of patterns in the query.
-    func getPatternCount() -> UInt32 {
+    public func getPatternCount() -> UInt32 {
         ts_query_pattern_count(query)
     }
     
     /// Get the number of captures in the query.
-    func getCaptureCount() -> UInt32 {
+    public func getCaptureCount() -> UInt32 {
         ts_query_capture_count(query)
     }
     
     /// Get the number of string literals in the query.
-    func getStringCount() -> UInt32 {
+    public func getStringCount() -> UInt32 {
         ts_query_string_count(query)
     }
     
@@ -56,7 +56,7 @@ public class Query {
     /// This can be useful when combining queries by concatenating their source
     /// code strings.
     ///
-    func getPatternStartOffset(from: UInt32) -> UInt32 {
+    public func getPatternStartOffset(from: UInt32) -> UInt32 {
         ts_query_start_byte_for_pattern(query, from)
     }
     
@@ -76,7 +76,7 @@ public class Query {
      *    that represent the end of an individual predicate. If a pattern has two
      *    predicates, then there will be two steps with this `type` in the array.
      */
-    func getQueryPredicatesForPattern(start: UInt32, length: inout UInt32) -> TSQueryPredicateStep? {
+    public func getQueryPredicatesForPattern(start: UInt32, length: inout UInt32) -> TSQueryPredicateStep? {
         let res = ts_query_predicates_for_pattern(query, start, &length)
         
         return res?.pointee
@@ -87,7 +87,7 @@ public class Query {
      * query's string literals. Each capture and string is associated with a
      * numeric id based on the order that it appeared in the query's source.
      */
-    func getCaptureName(for id: UInt32, length: inout UInt32) -> String? {
+    public func getCaptureName(for id: UInt32, length: inout UInt32) -> String? {
         let res = ts_query_capture_name_for_id(query, id, &length)
         
         guard let cStr = res else { return nil }
@@ -100,7 +100,7 @@ public class Query {
      * query's string literals. Each capture and string is associated with a
      * numeric id based on the order that it appeared in the query's source.
      */
-    func getStringValue(for id: UInt32, length: inout UInt32) -> String? {
+    public func getStringValue(for id: UInt32, length: inout UInt32) -> String? {
         let res = ts_query_string_value_for_id(query, id, &length)
         
         guard let cStr = res else { return nil }
@@ -115,7 +115,7 @@ public class Query {
      * any resource usage associated with recording the capture. Currently, there
      * is no way to undo this.
      */
-    func disableCapture(name: String, at position: UInt32) {
+    public func disableCapture(name: String, at position: UInt32) {
         ts_query_disable_capture(query, name, position)
     }
 
@@ -125,7 +125,7 @@ public class Query {
      * This prevents the pattern from matching and removes most of the overhead
      * associated with the pattern. Currently, there is no way to undo this.
      */
-    func disablePattern(at position: UInt32) {
+    public func disablePattern(at position: UInt32) {
         ts_query_disable_pattern(query, position)
     }
 }
@@ -174,7 +174,7 @@ public class QueryCursor {
      * Set the range of bytes positions in which the query
      * will be executed.
      */
-    func setByte(range: Range<UInt32>) {
+    public func setByte(range: Range<UInt32>) {
         ts_query_cursor_set_byte_range(cursor, range.lowerBound, range.upperBound)
     }
     
@@ -182,7 +182,7 @@ public class QueryCursor {
      * Set the range of ponts (row, column) positions in which the query
      * will be executed.
      */
-    func setPointRange(start: TSPoint, end: TSPoint) {
+    public func setPointRange(start: TSPoint, end: TSPoint) {
         ts_query_cursor_set_point_range(cursor, start, end)
     }
 
@@ -192,11 +192,11 @@ public class QueryCursor {
      * If there is a match, write it to `match` and return `true`.
      * Otherwise, return `false`.
      */
-    func gotoNextMatch(match: inout TSQueryMatch) -> Bool {
+    public func gotoNextMatch(match: inout TSQueryMatch) -> Bool {
         ts_query_cursor_next_match(cursor, &match)
     }
     
-    func removeMatch(id: UInt32) {
+    public func removeMatch(id: UInt32) {
         ts_query_cursor_remove_match(cursor, id)
     }
     
@@ -206,7 +206,7 @@ public class QueryCursor {
      * If there is a capture, write its match to `match` and its index within
      * the matche's capture list to `index`. Otherwise, return `false`.
      */
-    func gotoNextCapture(match: inout TSQueryMatch, index: inout UInt32) -> Bool {
+    public func gotoNextCapture(match: inout TSQueryMatch, index: inout UInt32) -> Bool {
         ts_query_cursor_next_capture(cursor, &match, &index)
     }
 }
