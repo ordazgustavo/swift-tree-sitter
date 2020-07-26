@@ -31,6 +31,21 @@ final class SwiftTreeSitterTests: XCTestCase {
         }
     }
     
+    func testParsesUTF8String() {
+        let sourceCode = "{\"value\": [1, null]}"
+
+        let tree = self.parser.parseString(source: sourceCode)!
+        let rootNode = tree.rootNode()
+
+        XCTAssertEqual(rootNode.kind(), "document")
+        XCTAssertEqual(rootNode.startPosition().column, UInt32(0))
+        XCTAssertEqual(rootNode.endPosition().column, UInt32(20))
+        
+        addTeardownBlock {
+            self.parser.reset()
+        }
+    }
+    
     func testParsesUTF8StringSlices() {
         let sourceCode = "{\"value\": [1, null]}"
 
@@ -52,6 +67,7 @@ final class SwiftTreeSitterTests: XCTestCase {
 
     static var allTests = [
         ("testParsesString", testParsesString),
+        ("testParsesUTF8String", testParsesUTF8String),
         ("testParsesUTF8StringSlices", testParsesUTF8StringSlices),
     ]
 }
