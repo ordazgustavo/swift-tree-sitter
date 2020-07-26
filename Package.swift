@@ -13,7 +13,6 @@ let package = Package(
         ),
         .library(
             name: "TreeSitterJavaScript",
-            type: .dynamic,
             targets: ["TreeSitterJavaScript"]
         ),
     ],
