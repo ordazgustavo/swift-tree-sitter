@@ -89,7 +89,7 @@ public class Query {
      */
     public func getCaptureName(for id: UInt32, length: inout UInt32) -> String? {
         let res = ts_query_capture_name_for_id(query, id, &length)
-        
+
         guard let cStr = res else { return nil }
         
         return String(cString: cStr)

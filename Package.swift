@@ -38,7 +38,8 @@ let package = Package(
         .target(
             name: "TreeSitterJavaScript",
             dependencies: [],
-            path: "Sources/TreeSitterJavaScript"
+            path: "Sources/TreeSitterJavaScript",
+            resources: [.process("queries")]
         ),
         .target(
             name: "SwiftTreeSitter",

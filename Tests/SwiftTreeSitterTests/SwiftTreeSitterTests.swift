@@ -17,7 +17,7 @@ final class SwiftTreeSitterTests: XCTestCase {
     func testParsesString() {
         let sourceCode = "[1, null]"
 
-        let tree = self.parser.parseString(source: sourceCode)!
+        let tree = self.parser.parseString(source: sourceCode, oldTree: nil)!
         let rootNode = tree.rootNode()
         
         let arrayNode = rootNode.namedChild(at: 0)
@@ -35,7 +35,7 @@ final class SwiftTreeSitterTests: XCTestCase {
     func testParsesUTF8String() {
         let sourceCode = "{\"value\": [1, null]}"
 
-        let tree = self.parser.parseString(source: sourceCode)!
+        let tree = self.parser.parseString(source: sourceCode, oldTree: nil)!
         let rootNode = tree.rootNode()
 
         XCTAssertEqual(rootNode.kind(), "document")
