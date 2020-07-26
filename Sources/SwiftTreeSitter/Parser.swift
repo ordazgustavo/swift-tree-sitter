@@ -15,7 +15,6 @@ public enum IncludedRangesError: Error {
 public class Parser {
     typealias TSParser = OpaquePointer
     var parser: TSParser
-//    var mutParser: OpaquePointer
     
     /// Create a new parser.
     public init() {
@@ -59,8 +58,13 @@ public class Parser {
         return Language(pointer)
     }
     
-    public func parseString(source: String) -> Tree? {
-        let res = ts_parser_parse_string(parser, nil, source, UInt32(source.count))
+    public func parseString(source: String, oldTree: Tree?) -> Tree? {
+        let res = ts_parser_parse_string(
+            parser,
+            oldTree?.tree,
+            source,
+            UInt32(source.count)
+        )
         
         guard let tree = res else { return .none }
         return Tree(tree)
