@@ -2,6 +2,7 @@ import XCTest
 @testable import TreeSitter
 @testable import SwiftTreeSitter
 @testable import TreeSitterJSON
+@testable import TreeSitterJavaScript
 
 final class SwiftTreeSitterTests: XCTestCase {
     let parser = Parser()

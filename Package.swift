@@ -50,6 +50,7 @@ let package = Package(
             name: "SwiftTreeSitterTests",
             dependencies: [
                 "SwiftTreeSitter",
+                "TreeSitterJavaScript",
                 .product(name: "TreeSitterJSON", package: "TreeSitterJSON"),
             ]
         ),
