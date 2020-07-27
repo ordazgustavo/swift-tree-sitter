@@ -1,6 +1,6 @@
+import Foundation
 import TreeSitter
 import TreeSitterJavaScript
-import Foundation
 
 /// The latest ABI version that is supported by the current version of the
 /// library.
@@ -14,12 +14,11 @@ public let LANGUAGE_VERSION = TREE_SITTER_LANGUAGE_VERSION
 /// The earliest ABI version that is supported by the current version of the
 /// library.
 public let MIN_COMPATIBLE_LANGUAGE_VERSION = TREE_SITTER_MIN_COMPATIBLE_LANGUAGE_VERSION
+//Bundle.main.url(forResource: "index", withExtension: "html", inDirectory: "games/game1")
 
 public struct JavaScript {
-    public static let queries = Bundle.module.urls(
-        forResourcesWithExtension: "scm",
-        subdirectory: "JavaScript"
-    )
+    // FIXME: using namespaces in filename due to weird bundle resource location
+    public static let queries = Bundle.module.urls(forResourcesWithExtension: "js.scm", subdirectory: nil)!
     public static let parser = {
         Language(tree_sitter_javascript())
     }()
