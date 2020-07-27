@@ -38,13 +38,13 @@ let package = Package(
         .target(
             name: "TreeSitterJavaScript",
             dependencies: [],
-            path: "Sources/TreeSitterJavaScript",
-            resources: [.process("queries")]
+            path: "Sources/TreeSitterJavaScript"
         ),
         .target(
             name: "SwiftTreeSitter",
-            dependencies: ["TreeSitter"],
-            path: "Sources/SwiftTreeSitter"
+            dependencies: ["TreeSitter", "TreeSitterJavaScript"],
+            path: "Sources/SwiftTreeSitter",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "SwiftTreeSitterTests",

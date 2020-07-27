@@ -1,4 +1,6 @@
 import TreeSitter
+import TreeSitterJavaScript
+import Foundation
 
 /// The latest ABI version that is supported by the current version of the
 /// library.
@@ -13,3 +15,12 @@ public let LANGUAGE_VERSION = TREE_SITTER_LANGUAGE_VERSION
 /// library.
 public let MIN_COMPATIBLE_LANGUAGE_VERSION = TREE_SITTER_MIN_COMPATIBLE_LANGUAGE_VERSION
 
+public struct JavaScript {
+    public static let queries = Bundle.module.urls(
+        forResourcesWithExtension: "scm",
+        subdirectory: "JavaScript"
+    )
+    public static let parser = {
+        Language(tree_sitter_javascript())
+    }()
+}
