@@ -16,10 +16,15 @@ public let LANGUAGE_VERSION = TREE_SITTER_LANGUAGE_VERSION
 public let MIN_COMPATIBLE_LANGUAGE_VERSION = TREE_SITTER_MIN_COMPATIBLE_LANGUAGE_VERSION
 //Bundle.main.url(forResource: "index", withExtension: "html", inDirectory: "games/game1")
 
-public struct JavaScript {
+public protocol LanguageBundle {
+    static var queries: [URL]? { get }
+    static var parser: Language { get }
+}
+
+public struct JavaScript: LanguageBundle {
     // FIXME: using namespaces in filename due to weird bundle resource location
-    public static let queries = Bundle.module.urls(forResourcesWithExtension: "js.scm", subdirectory: nil)!
-    public static let parser = {
+    public static var queries = Bundle.module.urls(forResourcesWithExtension: "js.scm", subdirectory: nil)
+    public static var parser = {
         Language(tree_sitter_javascript())
     }()
 }
