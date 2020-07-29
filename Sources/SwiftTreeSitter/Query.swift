@@ -49,15 +49,15 @@ public enum TextPredicate {
 // MARK: - Query
 
 public class Query {
-    var query: OpaquePointer?
-    var source: String
-    var errorOffset: UInt32
-    var queryError: TSQueryError
-    var captureNames = [String]()
-    var textPredicates = [TextPredicate]()
-    var propertySettings = [QueryProperty]()
-    var propertyPredicates = [(QueryProperty, Bool)]()
-    var generalPredicates = [QueryPredicate]()
+    public var query: OpaquePointer?
+    public var source: String
+    public var errorOffset: UInt32
+    public var queryError: TSQueryError
+    public var captureNames = [String]()
+    public var textPredicates = [TextPredicate]()
+    public var propertySettings = [QueryProperty]()
+    public var propertyPredicates = [(QueryProperty, Bool)]()
+    public var generalPredicates = [QueryPredicate]()
     
     public init(language: Language, source: String) {
         var errorOffset = UInt32(0)
