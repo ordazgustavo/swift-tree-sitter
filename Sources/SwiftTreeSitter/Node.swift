@@ -300,6 +300,22 @@ public struct Node {
         return result
     }
     
+//    pub fn utf8_text<'a>(&self, source: &'a [u8]) -> Result<&'a str, str::Utf8Error> {
+//        str::from_utf8(&source[self.start_byte()..self.end_byte()])
+//    }
+    
+    public func utf8Text(source: String) -> String {
+        let utf8 = Array(source.utf8)[Int(startByte())..<Int(endByte())]
+        
+        return String(decoding: utf8, as: UTF8.self)
+    }
+    
+    public func utf16Text(source: String) -> String {
+        let utf8 = Array(source.utf16)[Int(startByte())..<Int(endByte())]
+        
+        return String(decoding: utf8, as: UTF16.self)
+    }
+    
     /// Create a new [TreeCursor] starting from this node.
     public func walk() -> TreeCursor {
         TreeCursor(ts_tree_cursor_new(self.node))
