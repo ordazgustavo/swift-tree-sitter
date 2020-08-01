@@ -196,7 +196,6 @@ public struct Node {
         }
     }
     
-    
     /// Iterate over this node's named children.
     ///
     /// See also [Node::children].
@@ -299,11 +298,7 @@ public struct Node {
         cString?.deallocate()
         return result
     }
-    
-//    pub fn utf8_text<'a>(&self, source: &'a [u8]) -> Result<&'a str, str::Utf8Error> {
-//        str::from_utf8(&source[self.start_byte()..self.end_byte()])
-//    }
-    
+
     public func utf8Text(source: String) -> String {
         let utf8 = Array(source.utf8)[Int(startByte())..<Int(endByte())]
         
@@ -328,11 +323,10 @@ public struct Node {
     /// afterward will already reflect the edit. You only need to use [Node::edit]
     /// when you have a specific [Node] instance that you want to keep and continue
     /// to use after an edit.
-    public mutating func edit(_ edit: inout TSInputEdit) {
-        ts_node_edit(
-            withUnsafeMutablePointer(to: &node) { $0 },
-            withUnsafePointer(to: &edit) { $0 }
-        )
+    public mutating func edit(_ inputEdit: inout InputEdit) {
+        withUnsafeMutablePointer(to: &node) {
+            ts_node_edit($0, &inputEdit.rawInputEdit)
+        }
     }
 }
 
