@@ -71,4 +71,8 @@ public class Tree {
     public func edit(_ inputEdit: inout InputEdit) {
         ts_tree_edit(tree, &inputEdit.rawInputEdit)
     }
+    
+    public func clone() -> Tree {
+        Tree(ts_tree_copy(tree))
+    }
 }

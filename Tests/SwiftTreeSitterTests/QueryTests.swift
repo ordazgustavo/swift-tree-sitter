@@ -121,7 +121,7 @@ final class QueryTests: XCTestCase {
         
         let parser = Parser()
         parser.setLanguage(lang.parser)
-        let tree = parser.parseString(source: source, oldTree: nil)!
+        let tree = parser.parse(source: source)!
         let cursor = QueryCursor()
         
         let matches = cursor.matches(query: query, for: tree.rootNode()) {
@@ -169,7 +169,7 @@ final class QueryTests: XCTestCase {
         
         let parser = Parser()
         parser.setLanguage(lang.parser)
-        let tree = parser.parseString(source: source, oldTree: nil)!
+        let tree = parser.parse(source: source)!
         let cursor = QueryCursor()
         
         let captures = cursor.captures(query: query, for: tree.rootNode()) {

@@ -58,7 +58,7 @@ public class Parser {
         return Language(pointer)
     }
     
-    public func parseString(source: String, oldTree: Tree?) -> Tree? {
+    public func parse(source: String, oldTree: Tree? = nil) -> Tree? {
         let res = ts_parser_parse_string(
             parser,
             oldTree?.tree,
