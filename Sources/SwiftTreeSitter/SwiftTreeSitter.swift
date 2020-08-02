@@ -1,6 +1,6 @@
 import Foundation
 import TreeSitter
-import TreeSitterJavaScript
+import TreeSitterLanguages
 
 /// The latest ABI version that is supported by the current version of the
 /// library.
@@ -166,3 +166,24 @@ public struct JavaScript: LanguageBundle {
     
     public init() {}
 }
+
+public struct JSON: LanguageBundle {
+    // FIXME: using namespaces in filename due to weird bundle resource location
+    public var queries = Bundle.module.urls(forResourcesWithExtension: "json.scm", subdirectory: nil)
+    public var parser = {
+        Language(tree_sitter_json())
+    }()
+    
+    public init() {}
+}
+
+public struct Python: LanguageBundle {
+    // FIXME: using namespaces in filename due to weird bundle resource location
+    public var queries = Bundle.module.urls(forResourcesWithExtension: "py.scm", subdirectory: nil)
+    public var parser = {
+        Language(tree_sitter_python())
+    }()
+    
+    public init() {}
+}
+
