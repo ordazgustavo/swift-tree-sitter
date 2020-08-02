@@ -53,7 +53,7 @@ public class Query {
     public var source: String
     public var errorOffset: UInt32
     public var queryError: TSQueryError
-    public var captureNames = [String]()
+    private(set) public var captureNames = [String]()
     public var textPredicates = [TextPredicate]()
     public var propertySettings = [QueryProperty]()
     public var propertyPredicates = [(QueryProperty, Bool)]()
@@ -126,21 +126,22 @@ public class Query {
             }
         }
         
-        let stringCount = getStringCount()
-        let captureCount = getCaptureCount()
-        let patternCount = getPatternCount()
+        let stringCount = ts_query_string_count(query)
+        let captureCount = ts_query_capture_count(query)
+        let patternCount = ts_query_pattern_count(query)
         
         // Build a vector of strings to store the capture names.
         for i in 0..<captureCount {
             var length = UInt32(0)
-            let name = getCaptureName(for: i, length: &length)
-            captureNames.append(name!)
+            let name = ts_query_capture_name_for_id(query, i, &length)
+            captureNames.append(String(cString: name!))
         }
         
         // Build a vector of strings to represent literal values used in predicates.
         let stringValues: [String] = (0..<stringCount).compactMap { i in
             var length = UInt32(0)
-            return getStringValue(for: i, length: &length)
+            let value = ts_query_string_value_for_id(query, i, &length)
+            return String(cString: value!)
         }
         
         // Build a vector of predicates for each pattern.
@@ -157,9 +158,7 @@ public class Query {
             
             for p in predicateSteps.split(whereSeparator: { $0.type == typeDone }) {
                 let pred = Array(p)
-                if pred.isEmpty {
-                    continue
-                }
+                guard !pred.isEmpty else { continue }
                 
                 if pred[0].type != typeString {
                     let res = captureNames[Int(pred[0].value_id)]
@@ -244,7 +243,61 @@ public class Query {
         return .success(self)
     }
     
-    public func parseProperty(
+    /// Get the byte offset where the given pattern starts in the query's source.
+    public func startByteFor(pattern index: UInt32) -> UInt32 {
+        if index >= textPredicates.count {
+            fatalError("Pattern index is \(index) but the pattern count is \(textPredicates.count)")
+        }
+        return ts_query_start_byte_for_pattern(query, index)
+    }
+    
+    /// Get the number of patterns in the query.
+    public func patternCount() -> UInt32 {
+        ts_query_pattern_count(query)
+    }
+    
+    /// Get the properties that are checked for the given pattern index.
+    ///
+    /// This includes predicates with the operators `is?` and `is-not?`.
+    public func propertyPredicate(at index: UInt32) -> (QueryProperty, Bool) {
+        propertyPredicates[Int(index)]
+    }
+    
+    /// Get the properties that are set for the given pattern index.
+    ///
+    /// This includes predicates with the operator `set!`.
+    public func propertySettings(at index: UInt32) -> QueryProperty {
+        propertySettings[Int(index)]
+    }
+    
+    /// Get the other user-defined predicates associated with the given index.
+    ///
+    /// This includes predicate with operators other than:
+    /// * `match?`
+    /// * `eq?` and `not-eq?
+    /// * `is?` and `is-not?`
+    /// * `set!`
+    public func generalPredicates(at index: UInt32) -> QueryPredicate {
+        self.generalPredicates[Int(index)]
+    }
+    
+    /// Disable a certain capture within a query.
+    ///
+    /// This prevents the capture from being returned in matches, and also avoids any
+    /// resource usage associated with recording the capture.
+    public func disableCapture(name: String) {
+        ts_query_disable_capture(query, name, UInt32(name.count))
+    }
+    
+    /// Disable a certain pattern within a query.
+    ///
+    /// This prevents the pattern from matching, and also avoids any resource usage
+    /// associated with the pattern.
+    public func disablePattern(at index: UInt32) {
+        ts_query_disable_pattern(query, index)
+    }
+    
+    func parseProperty(
         functionName: String,
         captureNames: [String],
         stringValues: [String],
@@ -288,101 +341,6 @@ public class Query {
         }
         
         return .success(.init(key: theKey, value: value, captureId: captureId))
-    }
-    
-    
-    /// Get the number of patterns in the query.
-    public func getPatternCount() -> UInt32 {
-        ts_query_pattern_count(query)
-    }
-    
-    /// Get the number of captures in the query.
-    public func getCaptureCount() -> UInt32 {
-        ts_query_capture_count(query)
-    }
-    
-    /// Get the number of string literals in the query.
-    public func getStringCount() -> UInt32 {
-        ts_query_string_count(query)
-    }
-    
-    ///
-    /// Get the byte offset where the given pattern starts in the query's source.
-    ///
-    /// This can be useful when combining queries by concatenating their source
-    /// code strings.
-    ///
-    public func getPatternStartOffset(from: UInt32) -> UInt32 {
-        ts_query_start_byte_for_pattern(query, from)
-    }
-    
-    /**
-     * Get all of the predicates for the given pattern in the query.
-     *
-     * The predicates are represented as a single array of steps. There are three
-     * types of steps in this array, which correspond to the three legal values for
-     * the `type` field:
-     * - `TSQueryPredicateStepTypeCapture` - Steps with this type represent names
-     *    of captures. Their `value_id` can be used with the
-     *   `ts_query_capture_name_for_id` function to obtain the name of the capture.
-     * - `TSQueryPredicateStepTypeString` - Steps with this type represent literal
-     *    strings. Their `value_id` can be used with the
-     *    `ts_query_string_value_for_id` function to obtain their string value.
-     * - `TSQueryPredicateStepTypeDone` - Steps with this type are *sentinels*
-     *    that represent the end of an individual predicate. If a pattern has two
-     *    predicates, then there will be two steps with this `type` in the array.
-     */
-    public func getQueryPredicatesForPattern(start: UInt32, length: inout UInt32) -> TSQueryPredicateStep? {
-        let res = ts_query_predicates_for_pattern(query, start, &length)
-        
-        return res?.pointee
-    }
-    
-    /**
-     * Get the name and length of one of the query's captures, or one of the
-     * query's string literals. Each capture and string is associated with a
-     * numeric id based on the order that it appeared in the query's source.
-     */
-    public func getCaptureName(for id: UInt32, length: inout UInt32) -> String? {
-        let res = ts_query_capture_name_for_id(query, id, &length)
-
-        guard let cStr = res else { return nil }
-        
-        return String(cString: cStr)
-    }
-    
-    /**
-     * Get the name and length of one of the query's captures, or one of the
-     * query's string literals. Each capture and string is associated with a
-     * numeric id based on the order that it appeared in the query's source.
-     */
-    public func getStringValue(for id: UInt32, length: inout UInt32) -> String? {
-        let res = ts_query_string_value_for_id(query, id, &length)
-        
-        guard let cStr = res else { return nil }
-        
-        return String(cString: cStr)
-    }
-    
-    /**
-     * Disable a certain capture within a query.
-     *
-     * This prevents the capture from being returned in matches, and also avoids
-     * any resource usage associated with recording the capture. Currently, there
-     * is no way to undo this.
-     */
-    public func disableCapture(name: String, at position: UInt32) {
-        ts_query_disable_capture(query, name, position)
-    }
-
-    /**
-     * Disable a certain pattern within a query.
-     *
-     * This prevents the pattern from matching and removes most of the overhead
-     * associated with the pattern. Currently, there is no way to undo this.
-     */
-    public func disablePattern(at position: UInt32) {
-        ts_query_disable_pattern(query, position)
     }
 }
 
@@ -435,51 +393,20 @@ public class QueryCursor {
         return .init(pointer: cursor, query: query, textCallback: textCallback)
     }
 
-    /**
-     * Start running a given query on a given node.
-     */
-    public func exec(query: Query, on node: Node) {
+    func exec(query: Query, on node: Node) {
         ts_query_cursor_exec(cursor, query.query, node.node)
     }
 
-    /**
-     * Set the range of bytes positions in which the query
-     * will be executed.
-     */
+    /// Set the range in which the query will be executed, in terms of byte offsets.
     public func setByte(range: Range<UInt32>) {
         ts_query_cursor_set_byte_range(cursor, range.lowerBound, range.upperBound)
     }
     
-    /**
-     * Set the range of ponts (row, column) positions in which the query
-     * will be executed.
-     */
-    public func setPointRange(start: TSPoint, end: TSPoint) {
+    /// Set the range in which the query will be executed, in terms of rows and columns.
+    public func setPoint(range: Range<Point>) {
+        let start = range.lowerBound.rawPoint
+        let end = range.upperBound.rawPoint
         ts_query_cursor_set_point_range(cursor, start, end)
-    }
-
-    /**
-     * Advance to the next match of the currently running query.
-     *
-     * If there is a match, write it to `match` and return `true`.
-     * Otherwise, return `false`.
-     */
-    public func gotoNextMatch(match: inout TSQueryMatch) -> Bool {
-        ts_query_cursor_next_match(cursor, &match)
-    }
-    
-    public func removeMatch(id: UInt32) {
-        ts_query_cursor_remove_match(cursor, id)
-    }
-    
-    /**
-     * Advance to the next capture of the currently running query.
-     *
-     * If there is a capture, write its match to `match` and its index within
-     * the matche's capture list to `index`. Otherwise, return `false`.
-     */
-    public func gotoNextCapture(match: inout TSQueryMatch, index: inout UInt32) -> Bool {
-        ts_query_cursor_next_capture(cursor, &match, &index)
     }
 }
 

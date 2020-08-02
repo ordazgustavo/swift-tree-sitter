@@ -16,6 +16,142 @@ public let LANGUAGE_VERSION = TREE_SITTER_LANGUAGE_VERSION
 public let MIN_COMPATIBLE_LANGUAGE_VERSION = TREE_SITTER_MIN_COMPATIBLE_LANGUAGE_VERSION
 //Bundle.main.url(forResource: "index", withExtension: "html", inDirectory: "games/game1")
 
+public struct InputEdit {
+    var rawInputEdit: TSInputEdit
+    
+    /// For internal use only
+    init(raw: TSInputEdit) {
+        self.rawInputEdit = raw
+    }
+
+    public init(
+        startByte: UInt32,
+        oldEndByte: UInt32,
+        newEndByte: UInt32,
+        startPoint: Point,
+        oldEndPoint: Point,
+        newEndPoint: Point
+    ) {
+        self.rawInputEdit = TSInputEdit(
+            start_byte: startByte,
+            old_end_byte: oldEndByte,
+            new_end_byte: newEndByte,
+            start_point: startPoint.rawPoint,
+            old_end_point: oldEndPoint.rawPoint,
+            new_end_point: newEndPoint.rawPoint
+        )
+    }
+    
+    public var startByte: UInt32 {
+        rawInputEdit.start_byte
+    }
+    
+    public var oldEndByte: UInt32 {
+        rawInputEdit.old_end_byte
+    }
+    
+    public var newEndByte: UInt32 {
+        rawInputEdit.new_end_byte
+    }
+    
+    public var startPoint: Point {
+        Point(
+            row: rawInputEdit.start_point.row,
+            column: rawInputEdit.start_point.column
+        )
+    }
+    
+    public var oldEndPoint: Point {
+        Point(
+            row: rawInputEdit.old_end_point.row,
+            column: rawInputEdit.old_end_point.column
+        )
+    }
+    
+    public var newEndPoint: Point {
+        Point(
+            row: rawInputEdit.new_end_point.row,
+            column: rawInputEdit.new_end_point.column
+        )
+    }
+}
+
+public struct Point: Comparable {
+    let rawPoint: TSPoint
+    
+    /// For internal use only
+    init(raw: TSPoint) {
+        self.rawPoint = raw
+    }
+
+    public init(row: UInt32, column: UInt32) {
+        self.rawPoint = TSPoint(row: row, column: column)
+    }
+    
+    public var row: UInt32 {
+        rawPoint.row
+    }
+    
+    public var column: UInt32 {
+        rawPoint.column
+    }
+    
+    public static func < (lhs: Point, rhs: Point) -> Bool {
+        lhs.row < rhs.row || (lhs.row == rhs.row && lhs.column < rhs.column)
+    }
+    
+    public static func == (lhs: Point, rhs: Point) -> Bool {
+        lhs.row == rhs.row && lhs.column == rhs.column
+    }
+}
+
+/// A wrapper around Tree sitter's `TSRange`.
+/// We use the prefix `STS` because swift already has a `Range` type.
+public struct STSRange {
+    let rawRange: TSRange
+    
+    /// For internal use only
+    init(raw: TSRange) {
+        self.rawRange = raw
+    }
+    
+    public init(
+        startPoint: Point,
+        endPoint: Point,
+        startByte: UInt32,
+        endByte: UInt32
+    ) {
+        self.rawRange = TSRange(
+            start_point: startPoint.rawPoint,
+            end_point: endPoint.rawPoint,
+            start_byte: startByte,
+            end_byte: endByte
+        )
+    }
+    
+    public var startPoint: Point {
+        Point(
+            row: rawRange.start_point.row,
+            column: rawRange.start_point.column
+        )
+    }
+    
+    public var endPoint: Point {
+        Point(
+            row: rawRange.end_point.row,
+            column: rawRange.end_point.column
+        )
+    }
+    
+    public var startByte: UInt32 {
+        rawRange.start_byte
+    }
+    
+    public var endByte: UInt32 {
+        rawRange.end_byte
+    }
+}
+
 public protocol LanguageBundle {
     var queries: [URL]? { get }
     var parser: Language { get }

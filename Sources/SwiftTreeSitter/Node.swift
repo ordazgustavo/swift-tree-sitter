@@ -24,22 +24,23 @@ public struct Node {
     /// a new tree is created based on an older tree, and a node from the old
     /// tree is reused in the process, then that node will have the same id in
     /// both trees.
-    public func id() -> Int32 {
+    public var id: Int32 {
         self.node.id.load(as: Int32.self)
     }
     
+    
     /// Get this node's type as a numerical id.
-    public func kindId() -> UInt16 {
+    public var kindId: UInt16 {
         ts_node_symbol(node)
     }
     
     /// Get this node's type as a string.
-    public func kind() -> String {
+    public var kind: String {
         String(cString: ts_node_type(node)!)
     }
     
     /// Get the [Language] that was used to parse this node's syntax tree.
-    public func language() -> Language {
+    public var language: Language {
         Language(ts_tree_language(self.node.tree)!)
     }
     
@@ -75,7 +76,7 @@ public struct Node {
     /// Syntax errors represent parts of the code that could not be incorporated into a
     /// valid syntax tree.
     public func isError() -> Bool {
-        kindId() == UInt16.max
+        kindId == UInt16.max
     }
     
     /// Check if this node is *missing*.
@@ -87,38 +88,38 @@ public struct Node {
     }
     
     /// Get the byte offsets where this node starts.
-    public func startByte() -> UInt32 {
+    public var startByte: UInt32 {
         ts_node_start_byte(node)
     }
     
     /// Get the byte offsets where this node end.
-    public func endByte() -> UInt32 {
+    public var endByte: UInt32 {
         ts_node_end_byte(node)
     }
     
     /// Get the byte range of source code that this node represents.
-    public func byteRange() -> Range<UInt32> {
-        startByte()..<endByte()
+    public var byteRange: Range<UInt32> {
+        startByte..<endByte
     }
     
     /// Get this node's start position in terms of rows and columns.
-    public func startPosition() -> TSPoint {
-        ts_node_start_point(node)
+    public var startPosition: Point {
+        Point(raw: ts_node_start_point(node))
     }
     
     /// Get this node's end position in terms of rows and columns.
-    public func endPosition() -> TSPoint {
-        ts_node_end_point(node)
+    public var endPosition: Point {
+        Point(raw: ts_node_end_point(node))
     }
     
     /// Get the range of source code that this node represents, both in terms of raw bytes
     /// and of row/column coordinates.
-    public func range() -> TSRange {
-        TSRange(
-            start_point: startPosition(),
-            end_point: endPosition(),
-            start_byte: startByte(),
-            end_byte: endByte()
+    public func range() -> STSRange {
+        STSRange(
+            startPoint: startPosition,
+            endPoint: endPosition,
+            startByte: startByte,
+            endByte: endByte
         )
     }
     
@@ -133,7 +134,7 @@ public struct Node {
     }
     
     /// Get this node's number of children.
-    public func childCount() -> UInt32 {
+    public var childCount: UInt32 {
         ts_node_child_count(node)
     }
     
@@ -150,7 +151,7 @@ public struct Node {
     /// Get this node's number of *named* children.
     ///
     /// See also [Node::is_named].
-    public func namedChildCount() -> UInt32 {
+    public var namedChildCount: UInt32 {
         ts_node_named_child_count(node)
     }
     
@@ -187,7 +188,7 @@ public struct Node {
     public func children(cursor: inout TreeCursor) -> [Node] {
         cursor.reset(node: self)
         cursor.gotoFirstChild()
-        let range = 0..<childCount()
+        let range = 0..<childCount
         
         return range.map { _ in
             let result = cursor.node()
@@ -202,7 +203,7 @@ public struct Node {
     public func namedChildren(cursor: inout TreeCursor) -> [Node] {
         cursor.reset(node: self)
         cursor.gotoFirstChild()
-        let range = 0..<namedChildCount()
+        let range = 0..<namedChildCount
         
         return range.map { _ in
             while !cursor.node().isNamed() {
@@ -220,7 +221,7 @@ public struct Node {
     ///
     /// See also [Node::children].
     public func childrenBy(fieldName: String, cursor: inout TreeCursor) -> [Node] {
-        let fieldId = language().fieldIdFor(fieldName: fieldName)
+        let fieldId = language.fieldIdFor(fieldName: fieldName)
         return childrenBy(fieldId: fieldId ?? 0, cursor: &cursor)
     }
 
@@ -248,48 +249,72 @@ public struct Node {
     }
     
     /// Get this node's immediate parent.
-    public func parent() -> Node? {
+    public var parent: Node? {
         Node(ts_node_parent(node))
     }
 
     /// Get this node's next sibling.
-    public func nextSibling() -> Node? {
+    public var nextSibling: Node? {
         Node(ts_node_next_sibling(node))
     }
     
     /// Get this node's previous sibling.
-    public func prevSibling() -> Node? {
+    public var prevSibling: Node? {
         Node(ts_node_prev_sibling(node))
     }
 
     /// Get this node's next named sibling.
-    public func nextNamedSibling() -> Node? {
+    public var nextNamedSibling: Node? {
         Node(ts_node_next_named_sibling(node))
     }
     
     /// Get this node's previous named sibling.
-    public func prevNamedSibling() -> Node? {
+    public var prevNamedSibling: Node? {
         Node(ts_node_prev_named_sibling(node))
     }
     
     /// Get the smallest node within this node that spans the given range.
-    public func descendantForByteRange(start: uint, end: uint) -> Node? {
-        Node(ts_node_descendant_for_byte_range(node, start, end))
+    public func descendantFor(byteRange: Range<UInt32>) -> Node? {
+        Node(
+            ts_node_descendant_for_byte_range(
+                node,
+                byteRange.lowerBound,
+                byteRange.upperBound
+            )
+        )
     }
 
     /// Get the smallest named node within this node that spans the given range.
-    public func namedDescendantForByteRange(start: uint, end: uint) -> Node? {
-        Node(ts_node_named_descendant_for_byte_range(node, start, end))
+    public func namedDescendantFor(byteRange: Range<UInt32>) -> Node? {
+        Node(
+            ts_node_named_descendant_for_byte_range(
+                node,
+                byteRange.lowerBound,
+                byteRange.upperBound
+            )
+        )
     }
     
     /// Get the smallest node within this node that spans the given range.
-    public func descendantForPointRange(start: TSPoint, end: TSPoint) -> Node? {
-        Node(ts_node_descendant_for_point_range(node, start, end))
+    public func descendantFor(pointRange: Range<Point>) -> Node? {
+        Node(
+            ts_node_descendant_for_point_range(
+                node,
+                pointRange.lowerBound.rawPoint,
+                pointRange.upperBound.rawPoint
+            )
+        )
     }
     
     /// Get the smallest named node within this node that spans the given range.
-    public func namedDescendantForPointRange(start: TSPoint, end: TSPoint) -> Node? {
-        Node(ts_node_named_descendant_for_point_range(node, start, end))
+    public func namedDescendantFor(pointRange: Range<Point>) -> Node? {
+        Node(
+            ts_node_named_descendant_for_point_range(
+                node,
+                pointRange.lowerBound.rawPoint,
+                pointRange.upperBound.rawPoint
+            )
+        )
     }
     
     public func toSexp() -> String {
@@ -300,13 +325,13 @@ public struct Node {
     }
 
     public func utf8Text(source: String) -> String {
-        let utf8 = Array(source.utf8)[Int(startByte())..<Int(endByte())]
+        let utf8 = Array(source.utf8)[Int(startByte)..<Int(endByte)]
         
         return String(decoding: utf8, as: UTF8.self)
     }
     
     public func utf16Text(source: String) -> String {
-        let utf8 = Array(source.utf16)[Int(startByte())..<Int(endByte())]
+        let utf8 = Array(source.utf16)[Int(startByte)..<Int(endByte)]
         
         return String(decoding: utf8, as: UTF16.self)
     }
@@ -332,7 +357,7 @@ public struct Node {
 
 extension Node: Equatable {
     public static func == (lhs: Node, rhs: Node) -> Bool {
-        lhs.node.id == rhs.node.id
+        lhs.id == rhs.id
     }
 }
 

@@ -23,7 +23,7 @@ public struct Language: Equatable {
     
     /// Get the ABI version number that indicates which version of the Tree-sitter CLI
     /// that was used to generate this `Language`.
-    public func version() -> uint {
+    public var version: UInt32 {
         ts_language_version(language)
     }
     

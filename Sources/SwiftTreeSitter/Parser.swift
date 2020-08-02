@@ -13,8 +13,7 @@ public enum IncludedRangesError: Error {
 }
 
 public class Parser {
-    typealias TSParser = OpaquePointer
-    var parser: TSParser
+    var parser: OpaquePointer
     
     /// Create a new parser.
     public init() {
@@ -35,7 +34,7 @@ public class Parser {
     /// [MIN_COMPATIBLE_LANGUAGE_VERSION](MIN_COMPATIBLE_LANGUAGE_VERSION) constants.
     @discardableResult
     public func setLanguage(_ language: Language) -> Result<Void, LanguageError> {
-        let version = language.version()
+        let version = language.version
         
         if version < MIN_COMPATIBLE_LANGUAGE_VERSION || version > LANGUAGE_VERSION {
             return .failure(.version(version))
@@ -83,7 +82,7 @@ public class Parser {
     ///  * The parser has not yet had a language assigned with [Parser::set_language]
     ///  * The timeout set with [Parser::set_timeout_micros] expired
     ///  * The cancellation flag set with [Parser::set_cancellation_flag] was flipped
-    public func parse(text: String, oldTree: Tree?) -> Tree? {
+    public func parse(text: String, oldTree: Tree? = nil) -> Tree? {
         let bytes = text.utf8CString
         let len = bytes.count
         return parseWith(oldTree: oldTree) { (i, point) in

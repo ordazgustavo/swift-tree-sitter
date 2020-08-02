@@ -7,36 +7,6 @@
 
 import TreeSitter
 
-public struct InputEdit {
-    public var rawInputEdit: TSInputEdit
-
-    public init(
-        startByte: UInt32,
-        oldEndByte: UInt32,
-        newEndByte: UInt32,
-        startPoint: Point,
-        oldEndPoint: Point,
-        newEndPoint: Point
-    ) {
-        self.rawInputEdit = TSInputEdit(
-            start_byte: startByte,
-            old_end_byte: oldEndByte,
-            new_end_byte: newEndByte,
-            start_point: startPoint.rawPoint,
-            old_end_point: oldEndPoint.rawPoint,
-            new_end_point: newEndPoint.rawPoint
-        )
-    }
-}
-
-public struct Point {
-    public let rawPoint: TSPoint
-
-    public init(row: UInt32, column: UInt32) {
-        self.rawPoint = TSPoint(row: row, column: column)
-    }
-}
-
 public class Tree {
     var tree: OpaquePointer
     
@@ -74,5 +44,26 @@ public class Tree {
     
     public func clone() -> Tree {
         Tree(ts_tree_copy(tree))
+    }
+    
+    /// Compare this old edited syntax tree to a new syntax tree representing the same
+    /// document, returning a sequence of ranges whose syntactic structure has changed.
+    ///
+    /// For this to work correctly, this syntax tree must have been edited such that its
+    /// ranges match up to the new tree. Generally, you'll want to call this method right
+    /// after calling one of the [Parser::parse] functions. Call it on the old tree that
+    /// was passed to parse, and pass the new tree that was returned from `parse`.
+    public func changedRanges(other: Tree) -> [STSRange] {
+        var count = UInt32(0)
+        let ptr = ts_tree_get_changed_ranges(tree, other.tree, &count)
+        
+        return UnsafeBufferPointer(start: ptr, count: Int(count)).map {
+            STSRange(
+                startPoint: Point(raw: $0.start_point),
+                endPoint: Point(raw: $0.end_point),
+                startByte: $0.start_byte,
+                endByte: $0.end_byte
+            )
+        }
     }
 }

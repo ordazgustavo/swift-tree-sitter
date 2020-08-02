@@ -37,14 +37,14 @@ final class TreeTests: XCTestCase {
             let child2 = expr.child(at: 1)!
             
             XCTAssertTrue(expr.hasChanges())
-            XCTAssertEqual(expr.startByte(), 3)
-            XCTAssertEqual(expr.endByte(), 16)
+            XCTAssertEqual(expr.startByte, 3)
+            XCTAssertEqual(expr.endByte, 16)
             XCTAssertTrue(child1.hasChanges())
-            XCTAssertEqual(child1.startByte(), 3)
-            XCTAssertEqual(child1.endByte(), 6)
+            XCTAssertEqual(child1.startByte, 3)
+            XCTAssertEqual(child1.endByte, 6)
             XCTAssertTrue(!child2.hasChanges())
-            XCTAssertEqual(child2.startByte(), 8)
-            XCTAssertEqual(child2.endByte(), 11)
+            XCTAssertEqual(child2.startByte, 8)
+            XCTAssertEqual(child2.endByte, 11)
         }()
         
         // edit starting in the tree's padding but extending into its content:
@@ -65,14 +65,14 @@ final class TreeTests: XCTestCase {
             let child2 = expr.child(at: 1)!
 
             XCTAssertTrue(expr.hasChanges())
-            XCTAssertEqual(expr.startByte(), 5)
-            XCTAssertEqual(expr.endByte(), 16)
+            XCTAssertEqual(expr.startByte, 5)
+            XCTAssertEqual(expr.endByte, 16)
             XCTAssertTrue(child1.hasChanges())
-            XCTAssertEqual(child1.startByte(), 5)
-            XCTAssertEqual(child1.endByte(), 6)
+            XCTAssertEqual(child1.startByte, 5)
+            XCTAssertEqual(child1.endByte, 6)
             XCTAssertTrue(!child2.hasChanges())
-            XCTAssertEqual(child2.startByte(), 8)
-            XCTAssertEqual(child2.endByte(), 11)
+            XCTAssertEqual(child2.startByte, 8)
+            XCTAssertEqual(child2.endByte, 11)
         }()
         
         // insertion at the edge of a tree's padding:
@@ -93,14 +93,14 @@ final class TreeTests: XCTestCase {
             let child2 = expr.child(at: 1)!
 
             XCTAssertTrue(expr.hasChanges())
-            XCTAssertEqual(expr.startByte(), 4)
-            XCTAssertEqual(expr.endByte(), 17)
+            XCTAssertEqual(expr.startByte, 4)
+            XCTAssertEqual(expr.endByte, 17)
             XCTAssertTrue(child1.hasChanges())
-            XCTAssertEqual(child1.startByte(), 4)
-            XCTAssertEqual(child1.endByte(), 7)
+            XCTAssertEqual(child1.startByte, 4)
+            XCTAssertEqual(child1.endByte, 7)
             XCTAssertTrue(!child2.hasChanges())
-            XCTAssertEqual(child2.startByte(), 9)
-            XCTAssertEqual(child2.endByte(), 12)
+            XCTAssertEqual(child2.startByte, 9)
+            XCTAssertEqual(child2.endByte, 12)
         }()
         
         // replacement starting at the edge of the tree's padding:
@@ -121,14 +121,14 @@ final class TreeTests: XCTestCase {
             let child2 = expr.child(at: 1)!
 
             XCTAssertTrue(expr.hasChanges())
-            XCTAssertEqual(expr.startByte(), 4)
-            XCTAssertEqual(expr.endByte(), 17)
+            XCTAssertEqual(expr.startByte, 4)
+            XCTAssertEqual(expr.endByte, 17)
             XCTAssertTrue(child1.hasChanges())
-            XCTAssertEqual(child1.startByte(), 4)
-            XCTAssertEqual(child1.endByte(), 7)
+            XCTAssertEqual(child1.startByte, 4)
+            XCTAssertEqual(child1.endByte, 7)
             XCTAssertTrue(!child2.hasChanges())
-            XCTAssertEqual(child2.startByte(), 9)
-            XCTAssertEqual(child2.endByte(), 12)
+            XCTAssertEqual(child2.startByte, 9)
+            XCTAssertEqual(child2.endByte, 12)
         }()
         
         // deletion that spans more than one child node:
@@ -150,17 +150,17 @@ final class TreeTests: XCTestCase {
             let child3 = expr.child(at: 2)!
 
             XCTAssertTrue(expr.hasChanges())
-            XCTAssertEqual(expr.startByte(), 4)
-            XCTAssertEqual(expr.endByte(), 8)
+            XCTAssertEqual(expr.startByte, 4)
+            XCTAssertEqual(expr.endByte, 8)
             XCTAssertTrue(child1.hasChanges())
-            XCTAssertEqual(child1.startByte(), 4)
-            XCTAssertEqual(child1.endByte(), 4)
+            XCTAssertEqual(child1.startByte, 4)
+            XCTAssertEqual(child1.endByte, 4)
             XCTAssertTrue(child2.hasChanges())
-            XCTAssertEqual(child2.startByte(), 4)
-            XCTAssertEqual(child2.endByte(), 4)
+            XCTAssertEqual(child2.startByte, 4)
+            XCTAssertEqual(child2.endByte, 4)
             XCTAssertTrue(child3.hasChanges())
-            XCTAssertEqual(child3.startByte(), 5)
-            XCTAssertEqual(child3.endByte(), 8)
+            XCTAssertEqual(child3.startByte, 5)
+            XCTAssertEqual(child3.endByte, 8)
         }()
         
         // insertion at the end of the tree:
@@ -182,14 +182,14 @@ final class TreeTests: XCTestCase {
             let child3 = expr.child(at: 2)!
 
             XCTAssertTrue(expr.hasChanges())
-            XCTAssertEqual(expr.startByte(), 2)
-            XCTAssertEqual(expr.endByte(), 16)
+            XCTAssertEqual(expr.startByte, 2)
+            XCTAssertEqual(expr.endByte, 16)
             XCTAssertTrue(!child1.hasChanges())
-            XCTAssertEqual(child1.endByte(), 5)
+            XCTAssertEqual(child1.endByte, 5)
             XCTAssertTrue(!child2.hasChanges())
-            XCTAssertEqual(child2.endByte(), 10)
+            XCTAssertEqual(child2.endByte, 10)
             XCTAssertTrue(child3.hasChanges())
-            XCTAssertEqual(child3.endByte(), 16)
+            XCTAssertEqual(child3.endByte, 16)
         }()
     }
     
