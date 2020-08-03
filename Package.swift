@@ -8,7 +8,7 @@ let package = Package(
     products: [
         .library(
             name: "SwiftTreeSitter",
-            targets: ["TreeSitter", "TreeSitterLanguages", "SwiftTreeSitter"]
+            targets: ["TreeSitter", "SwiftTreeSitter"]
         ),
     ],
     dependencies: [],
@@ -25,20 +25,17 @@ let package = Package(
             ]
         ),
         .target(
-            name: "TreeSitterLanguages",
-            dependencies: [],
-            path: "Sources/TreeSitterLanguages"
-        ),
-        .target(
             name: "SwiftTreeSitter",
-            dependencies: ["TreeSitter", "TreeSitterLanguages"],
+            dependencies: ["TreeSitter"],
             path: "Sources/SwiftTreeSitter",
             resources: [.process("Resources")]
         ),
+        .target(name: "TreeSitterJavaScript", exclude: ["README.md"]),
         .testTarget(
             name: "SwiftTreeSitterTests",
             dependencies: [
-                "SwiftTreeSitter"
+                "SwiftTreeSitter",
+                "TreeSitterJavaScript"
             ]
         ),
     ]

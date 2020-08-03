@@ -507,10 +507,9 @@ public struct QueryMatchesIterator: IteratorProtocol {
     
     public func next() -> QueryMatch? {
         while true {
-            var match = TSQueryMatch()
             let ptr = capture.pointer
-            let canGo = ts_query_cursor_next_match(ptr, &match)
-            if canGo {
+            var match = TSQueryMatch()
+            if ts_query_cursor_next_match(ptr, &match) {
                 return QueryMatch(match: match, cursor: capture.pointer)
             } else {
                 return nil
@@ -541,11 +540,10 @@ public struct QueryCapturesIterator: IteratorProtocol {
     
     public func next() -> (QueryMatch, Int)? {
         while true {
-            var captureIndex = UInt32(0)
-            var match = TSQueryMatch()
             let ptr = capture.pointer
-            let canGo = ts_query_cursor_next_capture(ptr, &match, &captureIndex)
-            if canGo {
+            var match = TSQueryMatch()
+            var captureIndex = UInt32(0)
+            if ts_query_cursor_next_capture(ptr, &match, &captureIndex) {
                 let result = QueryMatch(match: match, cursor: capture.pointer)
                 if result.satisfiesTextPredicate(query: capture.query, textCallback: capture.textCallback) {
                     return (result, Int(captureIndex))

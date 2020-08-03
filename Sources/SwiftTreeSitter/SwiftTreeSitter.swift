@@ -1,6 +1,5 @@
 import Foundation
 import TreeSitter
-import TreeSitterLanguages
 
 /// The latest ABI version that is supported by the current version of the
 /// library.
@@ -151,39 +150,3 @@ public struct STSRange {
         rawRange.end_byte
     }
 }
-
-public protocol LanguageBundle {
-    var queries: [URL]? { get }
-    var parser: Language { get }
-}
-
-public struct JavaScript: LanguageBundle {
-    // FIXME: using namespaces in filename due to weird bundle resource location
-    public var queries = Bundle.module.urls(forResourcesWithExtension: "js.scm", subdirectory: nil)
-    public var parser = {
-        Language(tree_sitter_javascript())
-    }()
-    
-    public init() {}
-}
-
-public struct JSON: LanguageBundle {
-    // FIXME: using namespaces in filename due to weird bundle resource location
-    public var queries = Bundle.module.urls(forResourcesWithExtension: "json.scm", subdirectory: nil)
-    public var parser = {
-        Language(tree_sitter_json())
-    }()
-    
-    public init() {}
-}
-
-public struct Python: LanguageBundle {
-    // FIXME: using namespaces in filename due to weird bundle resource location
-    public var queries = Bundle.module.urls(forResourcesWithExtension: "py.scm", subdirectory: nil)
-    public var parser = {
-        Language(tree_sitter_python())
-    }()
-    
-    public init() {}
-}
-
