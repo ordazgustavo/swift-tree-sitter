@@ -27,8 +27,7 @@ let package = Package(
         .target(
             name: "SwiftTreeSitter",
             dependencies: ["TreeSitter"],
-            path: "Sources/SwiftTreeSitter",
-            resources: [.process("Resources")]
+            path: "Sources/SwiftTreeSitter"
         ),
         .target(name: "TreeSitterJavaScript", exclude: ["README.md"]),
         .testTarget(
