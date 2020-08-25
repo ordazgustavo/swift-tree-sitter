@@ -140,7 +140,7 @@ final class TreeTests: XCTestCase {
                 oldEndByte: 11,
                 newEndByte: 4,
                 startPoint: Point(row: 0, column: 1),
-                oldEndPoint: Point(row: 0, column: 1),
+                oldEndPoint: Point(row: 0, column: 11),
                 newEndPoint: Point(row: 0, column: 4)
             )
             tree2.edit(&inputEdit)
@@ -172,7 +172,7 @@ final class TreeTests: XCTestCase {
                 oldEndByte: 15,
                 newEndByte: 16,
                 startPoint: Point(row: 0, column: 15),
-                oldEndPoint: Point(row: 0, column:15),
+                oldEndPoint: Point(row: 0, column: 15),
                 newEndPoint: Point(row: 0, column: 16)
             )
             tree2.edit(&inputEdit)

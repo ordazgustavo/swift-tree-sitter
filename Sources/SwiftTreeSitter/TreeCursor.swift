@@ -27,7 +27,6 @@ public class TreeCursor {
         withUnsafePointer(to: cursor) {
             Node(ts_tree_cursor_current_node($0))!
         }
-        
     }
 
     /// Get the numerical field id of this tree cursor's current node.

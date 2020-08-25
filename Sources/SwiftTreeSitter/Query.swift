@@ -130,6 +130,12 @@ public class Query {
         let captureCount = ts_query_capture_count(query)
         let patternCount = ts_query_pattern_count(query)
         
+        self.captureNames.reserveCapacity(Int(captureCount))
+        self.textPredicates.reserveCapacity(Int(patternCount))
+        self.propertyPredicates.reserveCapacity(Int(patternCount))
+        self.propertySettings.reserveCapacity(Int(patternCount))
+        self.generalPredicates.reserveCapacity(Int(patternCount))
+        
         // Build a vector of strings to store the capture names.
         for i in 0..<captureCount {
             var length = UInt32(0)
@@ -156,6 +162,11 @@ public class Query {
             let typeCapture = TSQueryPredicateStepTypeCapture
             let typeString = TSQueryPredicateStepTypeString
             
+            var textPredicates = [TextPredicate]()
+            var propertySettings = [QueryProperty]()
+            var propertyPredicates = [(QueryProperty, Bool)]()
+            var generalPredicates = [QueryPredicate]()
+            
             for p in predicateSteps.split(whereSeparator: { $0.type == typeDone }) {
                 let pred = Array(p)
                 guard !pred.isEmpty else { continue }
@@ -169,7 +180,6 @@ public class Query {
                 
                 // Build a predicate for each of the known predicate function names.
                 let operatorName = stringValues[Int(pred[0].value_id)]
-                
                 if operatorName == "eq?" || operatorName == "not-eq?" {
                     if pred.count != 3 {
                         return .failure(
@@ -182,15 +192,21 @@ public class Query {
                         )
                     }
                     let isPositive = operatorName == "eq?";
+                    let predicate: TextPredicate
                     if pred[2].type == typeCapture {
-                        textPredicates.append(
-                            .captureEqCapture(pred[1].value_id, pred[2].value_id, isPositive)
+                        predicate = .captureEqCapture(
+                            pred[1].value_id,
+                            pred[2].value_id,
+                            isPositive
                         )
                     } else {
-                        textPredicates.append(
-                            .captureEqString(pred[1].value_id, stringValues[Int(pred[2].value_id)], isPositive)
+                        predicate = .captureEqString(
+                            pred[1].value_id,
+                            stringValues[Int(pred[2].value_id)],
+                            isPositive
                         )
                     }
+                    textPredicates.append(predicate)
                 } else if operatorName == "match?" || operatorName == "not-match?" {
                     if pred.count != 3 {
                         return .failure(
@@ -239,6 +255,11 @@ public class Query {
                     generalPredicates.append(pred)
                 }
             }
+            
+            self.textPredicates.append(contentsOf: textPredicates)
+            self.propertySettings.append(contentsOf: propertySettings)
+            self.propertyPredicates.append(contentsOf: propertyPredicates)
+            self.generalPredicates.append(contentsOf: generalPredicates)
         }
         return .success(self)
     }
@@ -469,7 +490,7 @@ public struct QueryMatch {
                 return textCallback(node).matches(regex) == isPositive
             }
         }
-        return false
+        return true
     }
     
     func captureFor(index: UInt32) -> Node? {
@@ -499,10 +520,14 @@ public struct QueryMatches: Sequence {
 }
 
 public struct QueryMatchesIterator: IteratorProtocol {
+    let query: Query
+    let textCallback: (Node) -> String
     let capture: QueryMatches
     
     init(_ capture: QueryMatches) {
         self.capture = capture
+        self.query = capture.query
+        self.textCallback = capture.textCallback
     }
     
     public func next() -> QueryMatch? {
@@ -510,7 +535,10 @@ public struct QueryMatchesIterator: IteratorProtocol {
             let ptr = capture.pointer
             var match = TSQueryMatch()
             if ts_query_cursor_next_match(ptr, &match) {
-                return QueryMatch(match: match, cursor: capture.pointer)
+                let result = QueryMatch(match: match, cursor: capture.pointer)
+                if result.satisfiesTextPredicate(query: query, textCallback: textCallback) {
+                    return result
+                }
             } else {
                 return nil
             }

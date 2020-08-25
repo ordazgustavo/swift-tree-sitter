@@ -131,9 +131,9 @@ final class QueryTests: XCTestCase {
         XCTAssertEqual(
             collectMatches(matches: matches, query: query, source: source),
             [
-                [0: ["the-return-value", "a + b - c"]],
-                [1: ["the-operator", "+"]],
-                [1: ["the-operator", "-"]]
+                [0: [["the-return-value", "a + b - c"]]],
+                [1: [["the-operator", "+"]]],
+                [1: [["the-operator", "-"]]]
             ]
         )
     }
@@ -193,6 +193,81 @@ final class QueryTests: XCTestCase {
         )
     }
     
+    func testQueryCapturesBasic() {
+        let lang = JavaScript()
+        let query = Query(
+            language: lang.parser,
+            source: """
+            (pair
+              key: _ @method.def
+              (function
+                name: (identifier) @method.alias))
+            (variable_declarator
+              name: _ @function.def
+              value: (function
+                name: (identifier) @function.alias))
+            ":" @delimiter
+            "=" @operator
+            """
+        )
+        _ = query.build()
+        
+        let source = """
+        a({
+            bc: function de() {
+            const fg = function hi() {}
+            },
+            jk: function lm() {
+            const no = function pq() {}
+            },
+        });
+        """
+        
+        let parser = Parser()
+        parser.setLanguage(lang.parser)
+        let tree = parser.parse(source: source)!
+        let cursor = QueryCursor()
+        
+//        let matches = cursor.matches(query: query, for: tree.rootNode()) {
+//            $0.utf8Text(source: source)
+//        }
+//
+//        XCTAssertEqual(
+//            collectMatches(matches: matches, query: query, source: source),
+//            [
+//                [2: [["delimiter", ":"]]],
+//                [0: [["method.def", "bc"], ["method.alias", "de"]]],
+//                [3: [["operator", "="]]],
+//                [1: [["function.def", "fg"], ["function.alias", "hi"]]],
+//                [2: [["delimiter", ":"]]],
+//                [0: [["method.def", "jk"], ["method.alias", "lm"]]],
+//                [3: [["operator", "="]]],
+//                [1: [["function.def", "no"], ["function.alias", "pq"]]],
+//            ]
+//        )
+        
+        let captures = cursor.captures(query: query, for: tree.rootNode()) {
+            $0.utf8Text(source: source)
+        }
+        XCTAssertEqual(
+            collectCaptures(captures: captures, query: query, source: source),
+            [
+                ["method.def", "bc"],
+                ["delimiter", ":"],
+                ["method.alias", "de"],
+                ["function.def", "fg"],
+                ["operator", "="],
+                ["function.alias", "hi"],
+                ["method.def", "jk"],
+                ["delimiter", ":"],
+                ["method.alias", "lm"],
+                ["function.def", "no"],
+                ["operator", "="],
+                ["function.alias", "pq"],
+            ]
+        )
+    }
+    
     override func tearDown() {
         super.tearDown()
     }
@@ -207,14 +282,14 @@ final class QueryTests: XCTestCase {
         matches: QueryMatches,
         query: Query,
         source: String
-    ) -> [[Int: [String]]] {
+    ) -> [[Int: [[String]]]] {
         matches.map { match in
             [
                 match.patternIndex: formatCaptures(
                     captures: match.captures,
                     query: query,
                     source: source
-                ).reduce([], +)
+                )
             ]
         }
     }
