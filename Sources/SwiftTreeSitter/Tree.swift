@@ -42,6 +42,16 @@ public class Tree {
         ts_tree_edit(tree, &inputEdit.rawInputEdit)
     }
     
+    /// Edit the syntax tree to keep it in sync with source code that has been
+    /// edited.
+    ///
+    /// You must describe the edit both in terms of byte offsets and in terms of
+    /// row/column coordinates.
+    public func edit(_ inputEdit: @autoclosure () -> InputEdit) {
+        var edit = inputEdit()
+        ts_tree_edit(tree, &edit.rawInputEdit)
+    }
+    
     public func clone() -> Tree {
         Tree(ts_tree_copy(tree))
     }

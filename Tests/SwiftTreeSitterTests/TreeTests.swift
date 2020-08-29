@@ -18,16 +18,15 @@ final class TreeTests: XCTestCase {
         // edit entirely within the tree's padding:
         // resize the padding of the tree and its leftmost descendants.
         do {
-            let tree2 = tree.clone();
-            var inputEdit = InputEdit(
+            let tree2 = tree.clone()
+            tree2.edit(InputEdit(
                 startByte: 1,
                 oldEndByte: 1,
                 newEndByte: 2,
                 startPoint: Point(row: 0, column: 1),
                 oldEndPoint: Point(row: 0, column: 1),
                 newEndPoint: Point(row: 0, column: 2)
-            )
-            tree2.edit(&inputEdit)
+            ))
             let expr = tree2.rootNode().child(at: 0)!.child(at: 0)!
             let child1 = expr.child(at: 0)!
             let child2 = expr.child(at: 1)!
