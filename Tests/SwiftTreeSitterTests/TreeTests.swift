@@ -3,10 +3,6 @@ import XCTest
 @testable import SwiftTreeSitter
 
 final class TreeTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-    }
-    
     func testTreeEdit() {
         let language = JavaScript()
         let parser = Parser()
@@ -21,7 +17,7 @@ final class TreeTests: XCTestCase {
         
         // edit entirely within the tree's padding:
         // resize the padding of the tree and its leftmost descendants.
-        _ = {
+        do {
             let tree2 = tree.clone();
             var inputEdit = InputEdit(
                 startByte: 1,
@@ -45,11 +41,11 @@ final class TreeTests: XCTestCase {
             XCTAssertTrue(!child2.hasChanges())
             XCTAssertEqual(child2.startByte, 8)
             XCTAssertEqual(child2.endByte, 11)
-        }()
+        }
         
         // edit starting in the tree's padding but extending into its content:
         // shrink the content to compenstate for the expanded padding.
-        _ = {
+        do {
             let tree2 = tree.clone();
             var inputEdit = InputEdit(
                 startByte: 1,
@@ -73,11 +69,11 @@ final class TreeTests: XCTestCase {
             XCTAssertTrue(!child2.hasChanges())
             XCTAssertEqual(child2.startByte, 8)
             XCTAssertEqual(child2.endByte, 11)
-        }()
+        }
         
         // insertion at the edge of a tree's padding:
         // expand the tree's padding.
-        _ = {
+        do {
             let tree2 = tree.clone();
             var inputEdit = InputEdit(
                 startByte: 2,
@@ -101,11 +97,11 @@ final class TreeTests: XCTestCase {
             XCTAssertTrue(!child2.hasChanges())
             XCTAssertEqual(child2.startByte, 9)
             XCTAssertEqual(child2.endByte, 12)
-        }()
+        }
         
         // replacement starting at the edge of the tree's padding:
         // resize the content and not the padding.
-        _ = {
+        do {
             let tree2 = tree.clone();
             var inputEdit = InputEdit(
                 startByte: 2,
@@ -129,11 +125,11 @@ final class TreeTests: XCTestCase {
             XCTAssertTrue(!child2.hasChanges())
             XCTAssertEqual(child2.startByte, 9)
             XCTAssertEqual(child2.endByte, 12)
-        }()
+        }
         
         // deletion that spans more than one child node:
         // shrink subsequent child nodes.
-        _ = {
+        do {
             let tree2 = tree.clone();
             var inputEdit = InputEdit(
                 startByte: 1,
@@ -161,11 +157,11 @@ final class TreeTests: XCTestCase {
             XCTAssertTrue(child3.hasChanges())
             XCTAssertEqual(child3.startByte, 5)
             XCTAssertEqual(child3.endByte, 8)
-        }()
+        }
         
         // insertion at the end of the tree:
         // extend the tree's content.
-        _ = {
+        do {
             let tree2 = tree.clone();
             var inputEdit = InputEdit(
                 startByte: 15,
@@ -190,13 +186,9 @@ final class TreeTests: XCTestCase {
             XCTAssertEqual(child2.endByte, 10)
             XCTAssertTrue(child3.hasChanges())
             XCTAssertEqual(child3.endByte, 16)
-        }()
+        }
     }
-    
-    override func tearDown() {
-        super.tearDown()
-    }
-    
+
     static var allTests = [
         ("testTreeEdit", testTreeEdit)
     ]
