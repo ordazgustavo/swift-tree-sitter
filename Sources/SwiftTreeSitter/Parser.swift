@@ -58,11 +58,12 @@ public class Parser {
     }
     
     public func parse(source: String, oldTree: Tree? = nil) -> Tree? {
+        let src = source.cString(using: .utf8)
         let res = ts_parser_parse_string(
             parser,
             oldTree?.tree,
-            source,
-            UInt32(source.count)
+            src,
+            UInt32(source.utf8.count)
         )
         
         guard let tree = res else { return .none }
