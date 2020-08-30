@@ -11,7 +11,7 @@ final class TreeTests: XCTestCase {
         let tree = parser.parse(source: "  abc  !==  def")!
         
         XCTAssertEqual(
-            tree.rootNode().toSexp(),
+            tree.rootNode.toSexp(),
             "(program (expression_statement (binary_expression left: (identifier) right: (identifier))))"
         );
         
@@ -27,7 +27,7 @@ final class TreeTests: XCTestCase {
                 oldEndPoint: Point(row: 0, column: 1),
                 newEndPoint: Point(row: 0, column: 2)
             ))
-            let expr = tree2.rootNode().child(at: 0)!.child(at: 0)!
+            let expr = tree2.rootNode.child(at: 0)!.child(at: 0)!
             let child1 = expr.child(at: 0)!
             let child2 = expr.child(at: 1)!
             
@@ -55,7 +55,7 @@ final class TreeTests: XCTestCase {
                 newEndPoint: Point(row: 0, column: 5)
             )
             tree2.edit(&inputEdit)
-            let expr = tree2.rootNode().child(at: 0)!.child(at: 0)!
+            let expr = tree2.rootNode.child(at: 0)!.child(at: 0)!
             let child1 = expr.child(at: 0)!
             let child2 = expr.child(at: 1)!
 
@@ -83,7 +83,7 @@ final class TreeTests: XCTestCase {
                 newEndPoint: Point(row: 0, column: 4)
             )
             tree2.edit(&inputEdit)
-            let expr = tree2.rootNode().child(at: 0)!.child(at: 0)!
+            let expr = tree2.rootNode.child(at: 0)!.child(at: 0)!
             let child1 = expr.child(at: 0)!
             let child2 = expr.child(at: 1)!
 
@@ -111,7 +111,7 @@ final class TreeTests: XCTestCase {
                 newEndPoint: Point(row: 0, column: 4)
             )
             tree2.edit(&inputEdit)
-            let expr = tree2.rootNode().child(at: 0)!.child(at: 0)!
+            let expr = tree2.rootNode.child(at: 0)!.child(at: 0)!
             let child1 = expr.child(at: 0)!
             let child2 = expr.child(at: 1)!
 
@@ -139,7 +139,7 @@ final class TreeTests: XCTestCase {
                 newEndPoint: Point(row: 0, column: 4)
             )
             tree2.edit(&inputEdit)
-            let expr = tree2.rootNode().child(at: 0)!.child(at: 0)!
+            let expr = tree2.rootNode.child(at: 0)!.child(at: 0)!
             let child1 = expr.child(at: 0)!
             let child2 = expr.child(at: 1)!
             let child3 = expr.child(at: 2)!
@@ -171,7 +171,7 @@ final class TreeTests: XCTestCase {
                 newEndPoint: Point(row: 0, column: 16)
             )
             tree2.edit(&inputEdit)
-            let expr = tree2.rootNode().child(at: 0)!.child(at: 0)!
+            let expr = tree2.rootNode.child(at: 0)!.child(at: 0)!
             let child1 = expr.child(at: 0)!
             let child2 = expr.child(at: 1)!
             let child3 = expr.child(at: 2)!

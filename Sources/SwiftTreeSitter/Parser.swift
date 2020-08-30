@@ -7,7 +7,6 @@
 
 import TreeSitter
 
-
 public enum IncludedRangesError: Error {
     case range(uint)
 }
@@ -17,7 +16,7 @@ public class Parser {
     
     /// Create a new parser.
     public init() {
-        self.parser = ts_parser_new()
+        parser = ts_parser_new()
     }
     
     deinit {
@@ -27,11 +26,11 @@ public class Parser {
     /// Set the language that the parser should use for parsing.
     ///
     /// Returns a Result indicating whether or not the language was successfully
-    /// assigned. True means assignment succeeded. False means there was a version
-    /// mismatch: the language was generated with an incompatible version of the
-    /// Tree-sitter CLI. Check the language's version using [Language::version]
-    /// and compare it to this library's [LANGUAGE_VERSION](LANGUAGE_VERSION) and
-    /// [MIN_COMPATIBLE_LANGUAGE_VERSION](MIN_COMPATIBLE_LANGUAGE_VERSION) constants.
+    /// assigned. True means assignment succeeded. False means there was a
+    /// version mismatch: the language was generated with an incompatible
+    /// version of the Tree-sitter CLI. Check the language's version using
+    /// `Language.version()` and compare it to this library's `LANGUAGE_VERSION`
+    /// and `MIN_COMPATIBLE_LANGUAGE_VERSION` constants.
     @discardableResult
     public func setLanguage(_ language: Language) -> Result<Void, LanguageError> {
         let version = language.version
@@ -40,19 +39,16 @@ public class Parser {
             return .failure(.version(version))
         }
         
-        let res = ts_parser_set_language(parser, language.language)
-        
-        if res {
-            return .success(())
+        guard ts_parser_set_language(parser, language.language) else {
+            return .failure(.version(version))
         }
         
-        return .failure(.version(version))
+        return .success(())
     }
     
     /// Get the parser's current language.
     public func language() -> Language? {
-        let ptr = ts_parser_language(parser)
-        guard let pointer = ptr else { return nil }
+        guard let pointer = ts_parser_language(parser) else { return nil }
         
         return Language(pointer)
     }
@@ -66,7 +62,7 @@ public class Parser {
             UInt32(source.utf8.count)
         )
         
-        guard let tree = res else { return .none }
+        guard let tree = res else { return nil }
         return Tree(tree)
     }
     
@@ -143,81 +139,87 @@ public class Parser {
     
     /// Instruct the parser to start the next parse from the beginning.
     ///
-    /// If the parser previously failed because of a timeout or a cancellation, then
-    /// by default, it will resume where it left off on the next call to `parse` or
-    /// other parsing functions. If you don't want to resume, and instead intend to
-    /// use this parser to parse some other document, you must call `reset` first.
+    /// If the parser previously failed because of a timeout or a cancellation,
+    /// then by default, it will resume where it left off on the next call to
+    /// `parse` or other parsing functions. If you don't want to resume, and
+    /// instead intend to use this parser to parse some other document, you must
+    ///  call `reset` first.
     public func reset() {
         ts_parser_reset(parser)
     }
     
     /// Get the duration in microseconds that parsing is allowed to take.
     ///
-    /// This is set via [set_timeout_micros](Parser::set_timeout_micros).
+    /// This is set via `Parser.setTimeoutMicros(timeout:)`.
     public func timeoutMicros() -> UInt64 {
         ts_parser_timeout_micros(parser)
     }
     
-    /// Set the maximum duration in microseconds that parsing should be allowed to
-    /// take before halting.
+    /// Set the maximum duration in microseconds that parsing should be allowed
+    /// to take before halting.
     ///
     /// If parsing takes longer than this, it will halt early, returning `None`.
     /// See `parse` for more information.
-    public func setTimeoutMicros(timeout: UInt64) {
+    public func setTimeoutMicros(timeout: CUnsignedLongLong) {
         ts_parser_set_timeout_micros(parser, timeout)
     }
 
     /// Set the ranges of text that the parser should include when parsing.
     ///
-    /// By default, the parser will always include entire documents. This function
-    /// allows you to parse only a *portion* of a document but still return a syntax
-    /// tree whose ranges match up with the document as a whole. You can also pass
-    /// multiple disjoint ranges.
+    /// By default, the parser will always include entire documents. This
+    /// function allows you to parse only a *portion* of a document but still
+    /// return a syntax tree whose ranges match up with the document as a whole.
+    /// You can also pass multiple disjoint ranges.
     ///
-    /// If `ranges` is empty, then the entire document will be parsed. Otherwise,
-    /// the given ranges must be ordered from earliest to latest in the document,
-    /// and they must not overlap. That is, the following must hold for all
-    /// `i` < `length - 1`:
-    /// ```text
-    ///     ranges[i].end_byte <= ranges[i + 1].start_byte
+    /// If `ranges` is empty, then the entire document will be parsed.
+    /// Otherwise, the given ranges must be ordered from earliest to latest in
+    /// the document, and they must not overlap. That is, the following must
+    /// hold for all `i < length - 1`:
     /// ```
+    /// ranges[i].endByte <= ranges[i + 1].startByte
+    /// ```
+    ///
     /// If this requirement is not satisfied, method will panic.
-    public func setIncludedRanges(_ ranges: [TSRange]) -> Result<Void, IncludedRangesError> {
-        var tsRanges = ranges
-        let result = withUnsafePointer(to: &tsRanges) {
-            ts_parser_set_included_ranges(parser, $0[0], UInt32($0.pointee.count))
-        }
+    public func setIncluded(
+        ranges: [STSRange]
+    ) -> Result<Void, IncludedRangesError> {
+        let tsRanges = ranges.map(\.rawRange)
         
-        if result {
-            return .success(())
-        } else {
-            var prevEndByte: UInt32 = 0
+        guard ts_parser_set_included_ranges(
+                parser,
+                tsRanges,
+                CUnsignedInt(tsRanges.count)
+        ) else {
+            var prevEndByte: CUnsignedInt = 0
             for (index, range) in tsRanges.enumerated() {
                 if range.start_byte < prevEndByte || range.end_byte < range.start_byte {
-                    return .failure(.range(uint(index)))
+                    return .failure(.range(CUnsignedInt(index)))
                 }
                 prevEndByte = range.end_byte
             }
             return .failure(.range(0))
         }
+        
+        return .success(())
     }
 
     /// Get the parser's current cancellation flag pointer.
-    public func cancellationFlag() -> UnsafePointer<Int> {
-        ts_parser_cancellation_flag(parser)
+    public func cancellationFlag() -> Int {
+        ts_parser_cancellation_flag(parser).pointee
     }
 
     /// Set the parser's current cancellation flag pointer.
     ///
     /// If a pointer is assigned, then the parser will periodically read from
-    /// this pointer during parsing. If it reads a non-zero value, it will halt early,
-    /// returning `None`. See [parse](Parser::parse) for more information.
-    public func setCancellation(flag: UnsafePointer<Int>?) {
-        guard let flag = flag else {
+    /// this pointer during parsing. If it reads a non-zero value, it will halt
+    /// early, returning `None`. See `Parser.parse(source:oldTree:)` for more
+    /// information.
+    public func setCancellation(flag: inout Int?) {
+        guard flag == nil else {
             ts_parser_set_cancellation_flag(parser, nil)
             return
         }
         
-        ts_parser_set_cancellation_flag(parser, flag)
+        ts_parser_set_cancellation_flag(parser, &flag!)
     }
 }

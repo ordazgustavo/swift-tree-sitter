@@ -19,18 +19,18 @@ public class Tree {
     }
     
     /// Get the root node of the syntax tree.
-    public func rootNode() -> Node {
+    public var rootNode: Node {
         Node(ts_tree_root_node(tree))!
     }
 
     /// Get the language that was used to parse the syntax tree.
-    public func language() -> Language {
+    public var language: Language {
         Language(ts_tree_language(tree)!)
     }
     
-    /// Create a new [TreeCursor] starting from the root of the tree.
+    /// Create a new `TreeCursor` starting from the root of the tree.
     public func walk() -> TreeCursor {
-        self.rootNode().walk()
+        rootNode.walk()
     }
     
     /// Edit the syntax tree to keep it in sync with source code that has been
@@ -56,15 +56,18 @@ public class Tree {
         Tree(ts_tree_copy(tree))
     }
     
-    /// Compare this old edited syntax tree to a new syntax tree representing the same
-    /// document, returning a sequence of ranges whose syntactic structure has changed.
+    /// Compare this old edited syntax tree to a new syntax tree representing
+    /// the same document, returning a sequence of ranges whose syntactic
+    /// structure has changed.
     ///
-    /// For this to work correctly, this syntax tree must have been edited such that its
-    /// ranges match up to the new tree. Generally, you'll want to call this method right
-    /// after calling one of the [Parser::parse] functions. Call it on the old tree that
-    /// was passed to parse, and pass the new tree that was returned from `parse`.
+    /// For this to work correctly, this syntax tree must have been edited such
+    /// that its ranges match up to the new tree. Generally, you'll want to call
+    /// this method right after calling one of the
+    /// `Parser.parse(source:oldTree:)` functions. Call it on the old tree that
+    /// was passed to parse, and pass the new tree that was returned from
+    /// `parse`.
     public func changedRanges(other: Tree) -> [STSRange] {
-        var count = UInt32(0)
+        var count = CUnsignedInt(0)
         let ptr = ts_tree_get_changed_ranges(tree, other.tree, &count)
         
         return UnsafeBufferPointer(start: ptr, count: Int(count)).map {

@@ -3,10 +3,6 @@ import XCTest
 @testable import SwiftTreeSitter
 
 final class QueryTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-    }
-    
     func testQueryErrorsOnInvalidSyntax() {
         let language = JavaScript()
         let q1 = try? Query(language: language.parser, source: "(if_statement)")
@@ -128,7 +124,7 @@ final class QueryTests: XCTestCase {
         
         let matches = cursor.matches(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
         
@@ -177,7 +173,7 @@ final class QueryTests: XCTestCase {
         
         let captures = cursor.captures(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
         
@@ -234,7 +230,7 @@ final class QueryTests: XCTestCase {
         
         let matches = cursor.matches(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
 
@@ -252,7 +248,7 @@ final class QueryTests: XCTestCase {
             ]
         )
         
-        let captures = cursor.captures(query: query, for: tree.rootNode()) {
+        let captures = cursor.captures(query: query, for: tree.rootNode) {
             $0.utf8Text(source: source)
         }
         XCTAssertEqual(
@@ -297,7 +293,7 @@ final class QueryTests: XCTestCase {
         
         let captures = cursor.captures(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
         
@@ -337,7 +333,7 @@ final class QueryTests: XCTestCase {
         
         let captures = cursor.captures(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
         
@@ -393,7 +389,7 @@ final class QueryTests: XCTestCase {
         
         let captures = cursor.captures(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
         
@@ -469,7 +465,7 @@ final class QueryTests: XCTestCase {
 
         let captures = cursor.captures(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
         let result = collectCaptures(
@@ -529,7 +525,7 @@ final class QueryTests: XCTestCase {
         
         let captures = cursor.captures(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
         
@@ -570,7 +566,7 @@ final class QueryTests: XCTestCase {
         let cursor = QueryCursor()
         let captures = cursor.captures(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
         
@@ -611,7 +607,7 @@ final class QueryTests: XCTestCase {
         
         let captures = cursor.captures(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
         .makeIterator()
@@ -625,7 +621,7 @@ final class QueryTests: XCTestCase {
         
         let matches = cursor.matches(
             query: query,
-            for: tree.rootNode(),
+            for: tree.rootNode,
             textCallback: toCallback(source)
         )
         .makeIterator()
@@ -672,10 +668,6 @@ final class QueryTests: XCTestCase {
             query.startByteFor(pattern: 7),
             UInt32(patterns1.count) + UInt32(patterns2.count)
         )
-    }
-    
-    override func tearDown() {
-        super.tearDown()
     }
     
     static var allTests = [

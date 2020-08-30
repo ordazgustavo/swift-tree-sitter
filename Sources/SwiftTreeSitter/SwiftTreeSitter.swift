@@ -13,7 +13,6 @@ public let LANGUAGE_VERSION = TREE_SITTER_LANGUAGE_VERSION
 /// The earliest ABI version that is supported by the current version of the
 /// library.
 public let MIN_COMPATIBLE_LANGUAGE_VERSION = TREE_SITTER_MIN_COMPATIBLE_LANGUAGE_VERSION
-//Bundle.main.url(forResource: "index", withExtension: "html", inDirectory: "games/game1")
 
 public struct InputEdit {
     var rawInputEdit: TSInputEdit
@@ -31,7 +30,7 @@ public struct InputEdit {
         oldEndPoint: Point,
         newEndPoint: Point
     ) {
-        self.rawInputEdit = TSInputEdit(
+        rawInputEdit = TSInputEdit(
             start_byte: startByte,
             old_end_byte: oldEndByte,
             new_end_byte: newEndByte,
@@ -41,15 +40,15 @@ public struct InputEdit {
         )
     }
     
-    public var startByte: UInt32 {
+    public var startByte: CUnsignedInt {
         rawInputEdit.start_byte
     }
     
-    public var oldEndByte: UInt32 {
+    public var oldEndByte: CUnsignedInt {
         rawInputEdit.old_end_byte
     }
     
-    public var newEndByte: UInt32 {
+    public var newEndByte: CUnsignedInt {
         rawInputEdit.new_end_byte
     }
     
@@ -80,18 +79,18 @@ public struct Point: Comparable {
     
     /// For internal use only
     init(raw: TSPoint) {
-        self.rawPoint = raw
+        rawPoint = raw
     }
 
-    public init(row: UInt32, column: UInt32) {
-        self.rawPoint = TSPoint(row: row, column: column)
+    public init(row: CUnsignedInt, column: CUnsignedInt) {
+        rawPoint = TSPoint(row: row, column: column)
     }
     
-    public var row: UInt32 {
+    public var row: CUnsignedInt {
         rawPoint.row
     }
     
-    public var column: UInt32 {
+    public var column: CUnsignedInt {
         rawPoint.column
     }
     
@@ -111,14 +110,14 @@ public struct STSRange {
     
     /// For internal use only
     init(raw: TSRange) {
-        self.rawRange = raw
+        rawRange = raw
     }
     
     public init(
         startPoint: Point,
         endPoint: Point,
-        startByte: UInt32,
-        endByte: UInt32
+        startByte: CUnsignedInt,
+        endByte: CUnsignedInt
     ) {
         self.rawRange = TSRange(
             start_point: startPoint.rawPoint,
@@ -142,11 +141,11 @@ public struct STSRange {
         )
     }
     
-    public var startByte: UInt32 {
+    public var startByte: CUnsignedInt {
         rawRange.start_byte
     }
     
-    public var endByte: UInt32 {
+    public var endByte: CUnsignedInt {
         rawRange.end_byte
     }
 }
