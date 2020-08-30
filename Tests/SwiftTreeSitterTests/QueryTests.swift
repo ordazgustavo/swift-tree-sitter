@@ -460,7 +460,7 @@ final class QueryTests: XCTestCase {
 
         let parser = Parser()
         parser.setLanguage(lang.parser)
-        let tree = parser.parse(source: source)!
+        let tree = parser.parse(text: source.utf8)!
         let cursor = QueryCursor()
 
         let captures = cursor.captures(

@@ -5,6 +5,7 @@
 //  Created by Gustavo Ordaz on 7/22/20.
 //
 
+import Foundation
 import TreeSitter
 
 public enum IncludedRangesError: Error {
@@ -53,13 +54,13 @@ public class Parser {
         return Language(pointer)
     }
     
+    /// Parse a whole document
     public func parse(source: String, oldTree: Tree? = nil) -> Tree? {
-        let src = source.cString(using: .utf8)
         let res = ts_parser_parse_string(
             parser,
             oldTree?.tree,
-            src,
-            UInt32(source.utf8.count)
+            source,
+            CUnsignedInt(source.utf8.count)
         )
         
         guard let tree = res else { return nil }
@@ -68,62 +69,64 @@ public class Parser {
     
     /// Parse a slice of UTF8 text.
     ///
-    /// # Arguments:
-    /// * `text` The UTF8-encoded text to parse.
-    /// * `old_tree` A previous syntax tree parsed from the same document.
-    ///   If the text of the document has changed since `old_tree` was
-    ///   created, then you must edit `old_tree` to match the new text using
-    ///   [Tree::edit].
+    /// If the text of the document has changed since `oldTree` was created,
+    /// then you must edit `oldTree` to match the new text using
+    /// `Tree.edit(_:)`.
     ///
-    /// Returns a [Tree] if parsing succeeded, or `None` if:
-    ///  * The parser has not yet had a language assigned with [Parser::set_language]
-    ///  * The timeout set with [Parser::set_timeout_micros] expired
-    ///  * The cancellation flag set with [Parser::set_cancellation_flag] was flipped
-    public func parse(text: String, oldTree: Tree? = nil) -> Tree? {
-        let bytes = text.utf8CString
-        let len = bytes.count
-        return parseWith(oldTree: oldTree) { (i, point) in
-            i < len ? bytes[Int(i)...] : []
+    /// - Parameters:
+    ///   - text: The UTF8-encoded text to parse.
+    ///   - oldTree: A previous syntax tree parsed from the same document.
+    ///
+    /// - Returns: A `Tree` if parsing succeeded, or `nil` if:
+    ///     - The parser has not yet had a language assigned with
+    ///     `Parser.setLanguage(_:)`
+    ///     - The timeout set with `Parser.setTimeoutMicros(timeout:)` expired
+    ///     - The cancellation flag set with `Parser.setCancellationFlag` was
+    ///     flipped
+    public func parse(text: String.UTF8View, oldTree: Tree? = nil) -> Tree? {
+        let len = text.count
+        return parseWith(oldTree: oldTree) { (i, _) in
+            i < len
+                ? text[text.index(text.startIndex, offsetBy: Int(i))...]
+                : Substring().utf8
         }
     }
     
+    public typealias ParseCallback = (CUnsignedInt, TSPoint) -> Substring.UTF8View
+    typealias Payload = (ParseCallback, Substring.UTF8View?)
+    typealias Read = @convention(c) (
+        UnsafeMutableRawPointer?,
+        CUnsignedInt,
+        TSPoint,
+        UnsafeMutablePointer<CUnsignedInt>?
+    ) -> UnsafePointer<CChar>?
+    
     /// Parse UTF8 text provided in chunks by a callback.
     ///
-    /// # Arguments:
-    /// * `callback` A function that takes a byte offset and position and
+    /// - Parameters:
+    ///   - oldTree: A previous syntax tree parsed from the same document.
+    ///   If the text of the document has changed since `oldTree` was
+    ///   created, then you must edit `oldTree` to match the new text using
+    ///   `Tree.edit(_:)`.
+    ///   - callback: A function that takes a byte offset and position and
     ///   returns a slice of UTF8-encoded text starting at that byte offset
     ///   and position. The slices can be of any length. If the given position
     ///   is at the end of the text, the callback should return an empty slice.
-    /// * `old_tree` A previous syntax tree parsed from the same document.
-    ///   If the text of the document has changed since `old_tree` was
-    ///   created, then you must edit `old_tree` to match the new text using
-    ///   [Tree::edit].
-    public typealias UTF8StringSlice = ArraySlice<CChar>
-    public typealias ParseCallback = (UInt32, TSPoint) -> UTF8StringSlice
+    ///
+    /// - Returns: A `Tree` if parsing succeeded, or `nil`
     public func parseWith(
         oldTree: Tree? = nil,
         callback: @escaping ParseCallback
     ) -> Tree? {
-        typealias Payload = (ParseCallback, UTF8StringSlice?)
         var payload: Payload = (callback, nil)
-        
-        typealias Read = @convention(c) (
-            UnsafeMutableRawPointer?,
-            UInt32,
-            TSPoint,
-            UnsafeMutablePointer<UInt32>?
-        ) -> UnsafePointer<Int8>?
 
         let read: Read = { payload, byteOffset, position, bytesRead in
             var (callback, text) = payload!.load(as: Payload.self)
             text = callback(byteOffset, position)
-            
-            return text?.withUnsafeBufferPointer {
-                bytesRead!.pointee = UInt32($0.count)
-                return $0.baseAddress!
-            }
+            bytesRead?.pointee = CUnsignedInt(text!.count)
+            return (String(text!) as NSString?)?.utf8String
         }
-        
+
         let cInput = withUnsafeMutableBytes(of: &payload) {
             TSInput(
                 payload: $0.baseAddress,
@@ -131,7 +134,7 @@ public class Parser {
                 encoding: TSInputEncodingUTF8
             )
         }
-        
+
         let cNewTree = ts_parser_parse(parser, oldTree?.tree, cInput)
         guard let newTree = cNewTree else { return .none }
         return Tree(newTree)

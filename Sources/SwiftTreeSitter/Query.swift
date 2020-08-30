@@ -59,11 +59,10 @@ public class Query {
     public init(language: Language, source: String) throws {
         var errorOffset: CUnsignedInt = 0
         var queryError = TSQueryErrorNone
-        let src = source.cString(using: .utf8)
         
         let queryPtr = ts_query_new(
             language.language,
-            src,
+            source,
             CUnsignedInt(source.utf8.count),
             &errorOffset,
             &queryError

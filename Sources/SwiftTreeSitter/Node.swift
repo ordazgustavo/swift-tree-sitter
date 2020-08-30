@@ -385,9 +385,9 @@ public struct Node {
     
     /// Get a utf16 string representation of this node
     public func utf16Text(source: String) -> String {
-        let utf8 = Array(source.utf16)[Int(startByte)..<Int(endByte)]
+        let utf16 = Array(source.utf16)[Int(startByte)..<Int(endByte)]
         
-        return String(decoding: utf8, as: UTF16.self)
+        return String(decoding: utf16, as: UTF16.self)
     }
     
     /// Create a new `TreeCursor` starting from this node.
