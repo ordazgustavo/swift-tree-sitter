@@ -5,6 +5,8 @@
 //  Created by Gustavo Ordaz on 7/26/20.
 //
 
+#include "parser.h"
+
 #ifndef javascript_h
 #define javascript_h
 

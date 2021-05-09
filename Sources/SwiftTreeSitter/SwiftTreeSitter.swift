@@ -74,7 +74,7 @@ public struct InputEdit {
     }
 }
 
-public struct Point: Comparable {
+public struct Point {
     let rawPoint: TSPoint
     
     /// For internal use only
@@ -93,13 +93,22 @@ public struct Point: Comparable {
     public var column: CUnsignedInt {
         rawPoint.column
     }
-    
+}
+
+extension Point: Comparable {
     public static func < (lhs: Point, rhs: Point) -> Bool {
         lhs.row < rhs.row || (lhs.row == rhs.row && lhs.column < rhs.column)
     }
     
     public static func == (lhs: Point, rhs: Point) -> Bool {
         lhs.row == rhs.row && lhs.column == rhs.column
+    }
+}
+
+extension Point: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(row)
+        hasher.combine(column)
     }
 }
 
@@ -147,5 +156,25 @@ public struct STSRange {
     
     public var endByte: CUnsignedInt {
         rawRange.end_byte
+    }
+}
+
+extension STSRange: Comparable {
+    public static func < (lhs: STSRange, rhs: STSRange) -> Bool {
+        lhs.startByte < rhs.startByte ||
+            (lhs.startByte == rhs.startByte && lhs.endByte < rhs.endByte)
+    }
+    
+    public static func == (lhs: STSRange, rhs: STSRange) -> Bool {
+        lhs.startPoint == rhs.endPoint && lhs.startByte == rhs.endByte
+    }
+}
+
+extension STSRange: Hashable {
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.startByte)
+        hasher.combine(self.endByte)
+        hasher.combine(self.startPoint)
+        hasher.combine(self.endPoint)
     }
 }
