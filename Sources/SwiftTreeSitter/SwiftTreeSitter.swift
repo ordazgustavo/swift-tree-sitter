@@ -174,7 +174,5 @@ extension STSRange: Hashable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.startByte)
         hasher.combine(self.endByte)
-        hasher.combine(self.startPoint)
-        hasher.combine(self.endPoint)
     }
 }
