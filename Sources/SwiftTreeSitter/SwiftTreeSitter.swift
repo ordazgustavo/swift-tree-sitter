@@ -136,6 +136,20 @@ public struct STSRange {
         )
     }
     
+    public init(
+        startPoint: Point,
+        endPoint: Point,
+        startByte: Int,
+        endByte: Int
+    ) {
+        self.rawRange = TSRange(
+            start_point: startPoint.rawPoint,
+            end_point: endPoint.rawPoint,
+            start_byte: CUnsignedInt(startByte),
+            end_byte: CUnsignedInt(endByte)
+        )
+    }
+    
     public var startPoint: Point {
         Point(
             row: rawRange.start_point.row,
@@ -150,12 +164,12 @@ public struct STSRange {
         )
     }
     
-    public var startByte: CUnsignedInt {
-        rawRange.start_byte
+    public var startByte: Int {
+        Int(rawRange.start_byte)
     }
     
-    public var endByte: CUnsignedInt {
-        rawRange.end_byte
+    public var endByte: Int {
+        Int(rawRange.end_byte)
     }
 }
 

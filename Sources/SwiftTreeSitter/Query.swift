@@ -8,35 +8,30 @@
 import Foundation
 import TreeSitter
 
-public enum QueryError: Error {
-    case syntax(Int, String)
-    case nodeType(Int, String)
-    case field(Int, String)
-    case capture(Int, String)
-    case predicate(String)
+public struct QueryError: Error {
+    public var row: Int
+    public var column: Int
+    public var offset: Int
+    public var message: String
+    public var kind: QueryErrorKind
+}
+
+public enum QueryErrorKind {
+    case syntax
+    case nodeType
+    case field
+    case capture
+    case predicate
+    case structure
 }
 
 extension QueryError: Equatable {
     public static func == (lhs: QueryError, rhs: QueryError) -> Bool {
-         switch (lhs, rhs) {
-         case let (.syntax(lInt, lString), .syntax( rInt, rString)):
-            return lInt == rInt && lString == rString
-            
-         case let (.nodeType(lInt, lString), .nodeType(rInt, rString)):
-            return lInt == rInt && lString == rString
-            
-         case let (.field(lInt, lString), .field(rInt, rString)):
-            return lInt == rInt && lString == rString
-            
-         case let (.capture(lInt, lString), .capture(rInt, rString)):
-            return lInt == rInt && lString == rString
-            
-         case let (.predicate(lString), .predicate(rString)):
-            return lString == rString
-            
-         default:
-            return false
-         }
+        lhs.row == rhs.row
+            && lhs.column == rhs.column
+            && lhs.offset == rhs.offset
+            && lhs.message == rhs.message
+            && lhs.kind == rhs.kind
      }
 }
 
@@ -73,51 +68,61 @@ public class Query {
             let offset = Int(errorOffset)
             var lineStart = 0
             var row = 0
-            let lineContainingError = source.components(separatedBy: .newlines)
-                .first { line in
+            var lineContainingError: String? = .none
+            for line in source.components(separatedBy: .newlines) {
+                let lineEnd = lineStart + line.count + 1
+                if lineEnd > offset {
+                    lineContainingError = .some(line)
+                    break
+                } else {
+                    lineStart = lineEnd
                     row += 1
-                    let lineEnd = lineStart + line.count + 1
-                    if lineEnd > offset {
-                        return true
-                    } else {
-                        lineStart = lineEnd
-                        return false
-                    }
                 }
-            
-            var message = "Unexpected EOF"
-            if let line = lineContainingError {
-                let padding = " "
-                    .padding(
-                        toLength: offset - lineStart,
-                        withPad: " ",
-                        startingAt: 0
-                    )
-                message = "\(line)\n" + padding + "^"
             }
+            let column = offset - lineStart;
             
-            if queryError != TSQueryErrorSyntax {
-                let firstHalf = source.index(source.startIndex, offsetBy: offset)
-                let suffix = String(source[firstHalf...])
-                let endOffset = suffix.first { c in
-                    !(c.isNumber || c.isLetter) && c != "_" && c != "-"
-                }
-                let parts = suffix.split(maxSplits: 1) { $0 == endOffset }
-                let name = String(parts[0])
-                
+            let kind: QueryErrorKind
+            let message: String
+            switch queryError {
+            // Error types that report names
+            case TSQueryErrorNodeType, TSQueryErrorField, TSQueryErrorCapture:
+                let startOffset = source.index(source.startIndex, offsetBy: offset)
+                let suffix = source.suffix(from: startOffset)
+                let endOffset = suffix.firstIndex { c in
+                    !c.isNumber && !c.isLetter && c != "_" && c != "-"
+                } ?? source.endIndex
+                message = String(suffix.suffix(from: endOffset))
                 switch queryError {
-                case TSQueryErrorNodeType:
-                    throw QueryError.nodeType(row, name)
-                case TSQueryErrorField:
-                    throw QueryError.nodeType(row, name)
-                case TSQueryErrorCapture:
-                    throw QueryError.nodeType(row, name)
-                default:
-                    throw QueryError.syntax(row, message)
+                case TSQueryErrorNodeType: kind = .nodeType
+                case TSQueryErrorField: kind = .field
+                case TSQueryErrorCapture: kind = .capture
+                default: fatalError()
+                };
+            // Error types that report positions
+            default:
+                if let line = lineContainingError {
+                    let padding = " "
+                        .padding(
+                            toLength: offset - lineStart,
+                            withPad: " ",
+                            startingAt: 0
+                        )
+                    message = "\(line)\n" + padding + "^"
+                } else {
+                    message = "Unexpected EOF"
                 }
-            } else {
-                throw QueryError.syntax(row, message)
+                switch queryError {
+                case TSQueryErrorStructure: kind = QueryErrorKind.structure
+                default: kind = QueryErrorKind.syntax
+                }
             }
+            throw QueryError(
+                row: row,
+                column: column,
+                offset: offset,
+                message: message,
+                kind: kind
+            )
         }
         
         let stringCount = ts_query_string_count(queryPtr)
@@ -155,11 +160,23 @@ public class Query {
                 i,
                 &length
             )
-            let predicateSteps = UnsafeBufferPointer(
-                start: rawPredicates,
-                count: Int(length)
-            )
-            .split { $0.type == typeDone }
+            let predicateSteps: [UnsafeBufferPointer<TSQueryPredicateStep>.SubSequence] = {
+                if length > 0 {
+                    return UnsafeBufferPointer(
+                        start: rawPredicates,
+                        count: Int(length)
+                    )
+                    .split { $0.type == typeDone }
+                }
+                return []
+            }()
+            
+            let byteOffset = ts_query_start_byte_for_pattern(queryPtr, CUnsignedInt(i))
+            let idx = source.index(source.startIndex, offsetBy: Int(byteOffset))
+            let row = source[...idx]
+                .filter(\.isNewline)
+                .components(separatedBy: .newlines)
+                .count
             
             for p in predicateSteps where !p.isEmpty {
                 let pred = Array(p)
@@ -167,7 +184,7 @@ public class Query {
                 if pred[0].type != typeString {
                     let res = captureNames[Int(pred[0].value_id)]
                     
-                    throw QueryError.predicate("""
+                    throw predicateError(row: row, message: """
                     Expected predicate to start with a function name.\
                     Got \(res).
                     """)
@@ -178,13 +195,13 @@ public class Query {
                 switch operatorName {
                 case "eq?", "not-eq?":
                     if pred.count != 3 {
-                        throw QueryError.predicate("""
+                        throw predicateError(row: row, message: """
                         Wrong number of arguments to #eq? predicate.
                         Expected 2, got \(pred.count - 1).
                         """)
                     }
                     if pred[1].type != typeCapture {
-                        throw QueryError.predicate("""
+                        throw predicateError(row: row, message: """
                         First argument to #eq? predicate must be a capture name.
                         Got literal \"\(stringValues[Int(pred[1].value_id)])\".
                         """)
@@ -205,19 +222,19 @@ public class Query {
                     )
                 case "match?", "not-match?":
                     if pred.count != 3 {
-                        throw QueryError.predicate("""
+                        throw predicateError(row: row, message: """
                         Wrong number of arguments to #match? predicate.
                         Expected 2, got \(pred.count - 1).
                         """)
                     }
                     if pred[1].type != typeCapture {
-                        throw QueryError.predicate("""
+                        throw predicateError(row: row, message: """
                         First argument to #match? predicate must be a capture name.
                         Got literal \"\(stringValues[Int(pred[1].value_id)])\".
                         """)
                     }
                     if pred[2].type == typeCapture {
-                        throw QueryError.predicate("""
+                        throw predicateError(row: row, message: """
                         Second argument to #match? predicate must be a literal.
                         Got capture \(captureNames[Int(pred[2].value_id)]).
                         """)
@@ -230,7 +247,8 @@ public class Query {
                 case "set!":
                     propertySettings.append(
                         try parseProperty(
-                            functionName: "set!",
+                            row: row,
+                            functionName: operatorName,
                             captureNames: captureNames,
                             stringValues: stringValues,
                             args: pred[1...]
@@ -240,6 +258,7 @@ public class Query {
                     propertyPredicates.append(
                         (
                             try parseProperty(
+                                row: row,
                                 functionName: operatorName,
                                 captureNames: captureNames,
                                 stringValues: stringValues,
@@ -270,38 +289,38 @@ public class Query {
     }
     
     /// Get the byte offset where the given pattern starts in the query's source.
-    public func startByteFor(pattern index: CUnsignedInt) -> CUnsignedInt {
-        ts_query_start_byte_for_pattern(pointer, index)
+    public func startByteFor(pattern index: UInt) -> UInt {
+        UInt(ts_query_start_byte_for_pattern(pointer, CUnsignedInt(index)))
     }
     
     /// Get the number of patterns in the query.
-    public func patternCount() -> CUnsignedInt {
-        ts_query_pattern_count(pointer)
+    public func patternCount() -> UInt {
+        UInt(ts_query_pattern_count(pointer))
     }
     
     /// Get the properties that are checked for the given pattern index.
     ///
     /// This includes predicates with the operators `is?` and `is-not?`.
-    public func propertyPredicate(at index: CUnsignedInt) -> (QueryProperty, Bool) {
-        propertyPredicates[Int(index)]
+    public func propertyPredicate(at index: Int) -> (QueryProperty, Bool) {
+        propertyPredicates[index]
     }
     
     /// Get the properties that are set for the given pattern index.
     ///
     /// This includes predicates with the operator `set!`.
-    public func propertySettings(at index: CUnsignedInt) -> QueryProperty {
-        propertySettings[Int(index)]
+    public func propertySettings(at index: Int) -> QueryProperty {
+        propertySettings[index]
     }
     
     /// Get the other user-defined predicates associated with the given index.
     ///
     /// This includes predicate with operators other than:
     /// * `match?`
-    /// * `eq?` and `not-eq?
+    /// * `eq?` and `not-eq?`
     /// * `is?` and `is-not?`
     /// * `set!`
-    public func generalPredicates(at index: CUnsignedInt) -> QueryPredicate {
-        generalPredicates[Int(index)]
+    public func generalPredicates(at index: Int) -> QueryPredicate {
+        generalPredicates[index]
     }
     
     /// Disable a certain capture within a query.
@@ -316,18 +335,27 @@ public class Query {
     ///
     /// This prevents the pattern from matching, and also avoids any resource usage
     /// associated with the pattern.
-    public func disablePattern(at index: CUnsignedInt) {
-        ts_query_disable_pattern(pointer, index)
+    public func disablePattern(at index: Int) {
+        ts_query_disable_pattern(pointer, CUnsignedInt(index))
     }
     
+    /// Check if a given step in a query is 'definite'.
+     ///
+     /// A query step is 'definite' if its parent pattern will be guaranteed to match
+     /// successfully once it reaches the step.
+     public func stepIsDefinite(byteOffset: UInt) -> Bool {
+         ts_query_step_is_definite(pointer, CUnsignedInt(byteOffset))
+     }
+    
     func parseProperty(
+        row: Int,
         functionName: String,
         captureNames: [String],
         stringValues: [String],
         args: ArraySlice<TSQueryPredicateStep>
     ) throws -> QueryProperty {
         if args.isEmpty || args.count > 3 {
-            throw QueryError.predicate("""
+            throw predicateError(row: row, message: """
             Wrong number of arguments to \(functionName) predicate.
             Expected 1 to 3, got \(args.count).
             """)
@@ -342,7 +370,7 @@ public class Query {
             if arg.type == TSQueryPredicateStepTypeCapture {
                 if captureId != nil {
                     let name = captureNames[index]
-                    throw QueryError.predicate("""
+                    throw predicateError(row: row, message: """
                     Invalid arguments to \(functionName) predicate.
                     Unexpected second capture name \(name)
                     """)
@@ -354,7 +382,7 @@ public class Query {
                 value = stringValues[index]
             } else {
                 let name = captureNames[index]
-                throw QueryError.predicate("""
+                throw predicateError(row: row, message: """
                 Invalid arguments to \(functionName) predicate.
                 Unexpected second capture name \(name)
                 """)
@@ -362,7 +390,7 @@ public class Query {
         }
         
         guard let theKey = key else {
-            throw QueryError.predicate("""
+            throw predicateError(row: row, message: """
             Invalid arguments to \(functionName) predicate.
             Missing key argument
             """)
@@ -370,6 +398,10 @@ public class Query {
         
         return QueryProperty(key: theKey, value: value, captureId: captureId)
     }
+}
+
+func predicateError(row: Int, message: String) -> QueryError {
+    QueryError(row: row, column: 0, offset: 0, message: message, kind: .predicate)
 }
 
 extension Query: Equatable {
@@ -390,6 +422,12 @@ public class QueryCursor {
     
     deinit {
         ts_query_cursor_delete(cursor)
+    }
+    
+    /// Check if, on its last execution, this cursor exceeded its maximum number of
+    /// in-progress matches.
+    public func didExceedMatchLimit() -> Bool {
+        ts_query_cursor_did_exceed_match_limit(cursor)
     }
     
     /// Iterate over all of the matches in the order that they were found.
@@ -434,11 +472,11 @@ public class QueryCursor {
     }
 
     /// Set the range in which the query will be executed, in terms of byte offsets.
-    public func setByte(range: Range<CUnsignedInt>) {
+    public func setByte(range: Range<UInt>) {
         ts_query_cursor_set_byte_range(
             cursor,
-            range.lowerBound,
-            range.upperBound
+            CUnsignedInt(range.lowerBound),
+            CUnsignedInt(range.upperBound)
         )
     }
     
@@ -486,11 +524,15 @@ public struct QueryMatch {
         self.cursor = cursor
         self.id = match.id
         self.patternIndex = Int(match.pattern_index)
-        self.captures = UnsafeBufferPointer(
-            start: match.captures,
-            count: Int(match.capture_count)
-        )
-        .map { QueryCapture(node: Node($0.node)!, index: $0.index) }
+        if match.capture_count > 0 {
+            self.captures = UnsafeBufferPointer(
+                start: match.captures,
+                count: Int(match.capture_count)
+            )
+            .map { QueryCapture(node: Node($0.node)!, index: $0.index) }
+        } else {
+            self.captures = []
+        }
     }
     
     public func satisfiesTextPredicate(

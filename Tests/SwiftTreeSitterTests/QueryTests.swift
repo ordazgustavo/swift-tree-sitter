@@ -8,7 +8,7 @@ final class QueryTests: XCTestCase {
         let q1 = try? Query(language: language.parser, source: "(if_statement)")
         let q2 = try? Query(
             language: language.parser,
-            source: "(if_statement condition:(identifier))"
+            source: "(if_statement condition:(parenthesized_expression (identifier)))"
         )
         XCTAssertTrue(q1 != nil)
         XCTAssertTrue(q2 != nil)
@@ -16,22 +16,28 @@ final class QueryTests: XCTestCase {
         // Mismatched parens
         assert(
             try Query(language: language.parser, source: "(if_statement"),
-            throws: QueryError.syntax(
-                1,
-                [
+            throws: QueryError(
+                row: 0,
+                column: 13,
+                offset: 13,
+                message: [
                     "(if_statement",
                     "             ^",
-                ].joined(separator: "\n")
+                ].joined(separator: "\n"),
+                kind: .syntax
             )
         )
         assert(
             try Query(language: language.parser, source: "(if_statement))"),
-            throws: QueryError.syntax(
-                1,
-                [
+            throws: QueryError(
+                row: 0,
+                column: 14,
+                offset: 14,
+                message: [
                     "(if_statement))",
                     "              ^",
-                ].joined(separator: "\n")
+                ].joined(separator: "\n"),
+                kind: .syntax
             )
         )
         
@@ -39,67 +45,85 @@ final class QueryTests: XCTestCase {
         // If there's a colon but no pattern, return an error at the end of the colon.
         assert(
             try Query(language: language.parser, source: "(if_statement identifier)"),
-            throws: QueryError.syntax(
-                1,
-                [
+            throws: QueryError(
+                row: 0,
+                column: 14,
+                offset: 14,
+                message: [
                     "(if_statement identifier)",
                     "              ^",
-                ].joined(separator: "\n")
+                ].joined(separator: "\n"),
+                kind: .syntax
             )
         )
         
         assert(
             try Query(language: language.parser, source: "(if_statement condition:)"),
-            throws: QueryError.syntax(
-                1,
-                [
+            throws: QueryError(
+                row: 0,
+                column: 24,
+                offset: 24,
+                message: [
                     "(if_statement condition:)",
                     "                        ^",
-                ].joined(separator: "\n")
+                ].joined(separator: "\n"),
+                kind: .syntax
             )
         )
         
         assert(
             try Query(language: language.parser, source: #"(identifier) "h "#),
-            throws: QueryError.syntax(
-                1,
-                [
+            throws: QueryError(
+                row: 0,
+                column: 13,
+                offset: 13,
+                message: [
                     #"(identifier) "h "#,
                     #"             ^"#,
-                ].joined(separator: "\n")
+                ].joined(separator: "\n"),
+                kind: .syntax
             )
         )
         
         assert(
             try Query(language: language.parser, source: "((identifier) [])"),
-            throws: QueryError.syntax(
-                1,
-                [
+            throws: QueryError(
+                row: 0,
+                column: 15,
+                offset: 15,
+                message: [
                     "((identifier) [])",
                     "               ^",
-                ].joined(separator: "\n")
+                ].joined(separator: "\n"),
+                kind: .syntax
             )
         )
         
         assert(
             try Query(language: language.parser, source: "((identifier) (#a)"),
-            throws: QueryError.syntax(
-                1,
-                [
+            throws: QueryError(
+                row: 0,
+                column: 18,
+                offset: 18,
+                message: [
                     "((identifier) (#a)",
                     "                  ^",
-                ].joined(separator: "\n")
+                ].joined(separator: "\n"),
+                kind: .syntax
             )
         )
         
         assert(
             try Query(language: language.parser, source: "((identifier) @x (#eq? @x a"),
-            throws: QueryError.syntax(
-                1,
-                [
+            throws: QueryError(
+                row: 0,
+                column: 27,
+                offset: 27,
+                message: [
                     "((identifier) @x (#eq? @x a",
                     "                           ^",
-                ].joined(separator: "\n")
+                ].joined(separator: "\n"),
+                kind: .syntax
             )
         )
     }
@@ -652,7 +676,7 @@ final class QueryTests: XCTestCase {
         let patterns3 = """
             ((identifier) @b (#match? @b i))
             (function_declaration name: (identifier) @c)
-            (method_definition name: (identifier) @d)
+            (method_definition name: (property_identifier) @d)
         """.trimmingCharacters(in: .whitespaces)
         
         var source = ""
@@ -663,10 +687,10 @@ final class QueryTests: XCTestCase {
         let query = try! Query(language: lang.parser, source: source)
         
         XCTAssertEqual(query.startByteFor(pattern: 0), 0)
-        XCTAssertEqual(query.startByteFor(pattern: 5), UInt32(patterns1.count))
+        XCTAssertEqual(query.startByteFor(pattern: 5), UInt(patterns1.count))
         XCTAssertEqual(
             query.startByteFor(pattern: 7),
-            UInt32(patterns1.count) + UInt32(patterns2.count)
+            UInt(patterns1.count) + UInt(patterns2.count)
         )
     }
     

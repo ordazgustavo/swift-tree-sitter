@@ -30,7 +30,7 @@ public class TreeCursor {
     /// Get the numerical field id of this tree cursor's current node.
     ///
     /// See also `fieldName`.
-    public func fieldId() -> CUnsignedShort? {
+    public func fieldId() -> UInt16? {
         let id = ts_tree_cursor_current_field_id(&cursor)
         
         if id == 0 {
@@ -81,8 +81,8 @@ public class TreeCursor {
     ///
     /// This returns the index of the child node if one was found, and returns
     /// `nil` if no such child was found.
-    public func gotoFirstChildForByte(index: CUnsignedInt) -> Int64? {
-        let result = ts_tree_cursor_goto_first_child_for_byte(&cursor, index)
+    public func gotoFirstChildForByte(index: UInt) -> Int64? {
+        let result = ts_tree_cursor_goto_first_child_for_byte(&cursor, CUnsignedInt(index))
             
         if result < 0 {
             return nil

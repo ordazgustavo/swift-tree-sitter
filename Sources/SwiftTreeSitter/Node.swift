@@ -25,8 +25,8 @@ public struct Node {
     /// a new tree is created based on an older tree, and a node from the old
     /// tree is reused in the process, then that node will have the same id in
     /// both trees.
-    public var id: CInt {
-        self.node.id.load(as: CInt.self)
+    public var id: Int {
+        self.node.id.load(as: Int.self)
     }
     
     
@@ -89,18 +89,23 @@ public struct Node {
     }
     
     /// Get the byte offsets where this node starts.
-    public var startByte: CUnsignedInt {
-        ts_node_start_byte(node)
+    public var startByte: Int {
+        Int(ts_node_start_byte(node))
     }
     
     /// Get the byte offsets where this node end.
-    public var endByte: CUnsignedInt {
-        ts_node_end_byte(node)
+    public var endByte: Int {
+        Int(ts_node_end_byte(node))
     }
     
     /// Get the byte range of source code that this node represents.
-    public var byteRange: Range<CUnsignedInt> {
+    public var byteRange: Range<Int> {
         startByte..<endByte
+    }
+    
+    /// Get the byte range of source code that this node represents.
+    public var nsRange: NSRange {
+        NSRange(location: startByte, length: endByte - startByte)
     }
     
     /// Get this node's start position in terms of rows and columns.
@@ -119,8 +124,8 @@ public struct Node {
         STSRange(
             startPoint: startPosition,
             endPoint: endPosition,
-            startByte: startByte,
-            endByte: endByte
+            startByte: ts_node_start_byte(node),
+            endByte: ts_node_end_byte(node)
         )
     }
     
@@ -133,13 +138,13 @@ public struct Node {
     ///
     /// - Parameter at: The index to look for
     /// - Returns: A posible node
-    public func child(at: CUnsignedInt) -> Node? {
-        Node(ts_node_child(node, at))
+    public func child(at: UInt) -> Node? {
+        Node(ts_node_child(node, CUnsignedInt(at)))
     }
     
     /// Get this node's number of children.
-    public var childCount: CUnsignedInt {
-        ts_node_child_count(node)
+    public var childCount: UInt {
+        UInt(ts_node_child_count(node))
     }
     
     /// Get this node's *named* child at the given index.
@@ -151,15 +156,15 @@ public struct Node {
     ///
     /// - Parameter at: The index to look for
     /// - Returns: A posible node
-    public func namedChild(at: CUnsignedInt) -> Node? {
-        Node(ts_node_named_child(node, at))
+    public func namedChild(at: UInt) -> Node? {
+        Node(ts_node_named_child(node, CUnsignedInt(at)))
     }
     
     /// Get this node's number of *named* children.
     ///
     /// See also `Node.isNamed`.
-    public var namedChildCount: CUnsignedInt {
-        ts_node_named_child_count(node)
+    public var namedChildCount: UInt {
+        UInt(ts_node_named_child_count(node))
     }
     
     /// Get the first child with the given field name.
@@ -173,7 +178,7 @@ public struct Node {
         Node(ts_node_child_by_field_name(
                 node,
                 fieldName,
-                uint(fieldName.count)
+                CUnsignedInt(fieldName.count)
             )
         )
     }
@@ -185,8 +190,8 @@ public struct Node {
     ///
     /// - Parameter fieldId: The language field identifier
     /// - Returns: A posible node
-    public func childBy(fieldId: CUnsignedShort) -> Node? {
-        Node(ts_node_child_by_field_id(node, fieldId))
+    public func childBy(fieldId: UInt16) -> Node? {
+        Node(ts_node_child_by_field_id(node, CUnsignedShort(fieldId)))
     }
     
     /// Iterate over this node's children.
@@ -242,7 +247,7 @@ public struct Node {
     ///
     /// See also `Node.childrenBy(fieldName:cursor:)`.
     public func childrenBy(
-        fieldId: CUnsignedShort,
+        fieldId: UInt16,
         cursor: inout TreeCursor
     ) -> [Node] {
         cursor.reset(node: self)
@@ -290,20 +295,20 @@ public struct Node {
     }
     
     public func descendantFor(
-        startByte: CUnsignedInt,
-        endByte: CUnsignedInt
+        startByte: Int,
+        endByte: Int
     ) -> Node? {
         Node(
             ts_node_descendant_for_byte_range(
                 node,
-                startByte,
-                endByte
+                CUnsignedInt(startByte),
+                CUnsignedInt(endByte)
             )
         )
     }
     
     /// Get the smallest node within this node that spans the given range.
-    public func descendant(for byteRange: Range<CUnsignedInt>) -> Node? {
+    public func descendant(for byteRange: Range<Int>) -> Node? {
         descendantFor(
             startByte: byteRange.lowerBound,
             endByte: byteRange.upperBound
@@ -313,27 +318,27 @@ public struct Node {
     /// Get the smallest node within this node that spans the given range.
     public func descendant(for nsRange: NSRange) -> Node? {
         descendantFor(
-            startByte: CUnsignedInt(nsRange.lowerBound),
-            endByte: CUnsignedInt(nsRange.upperBound)
+            startByte: nsRange.lowerBound,
+            endByte: nsRange.upperBound
         )
     }
     
     /// Get the smallest named node within this node that spans the given range.
     public func namedDescendantFor(
-        startByte: CUnsignedInt,
-        endByte: CUnsignedInt
+        startByte: Int,
+        endByte: Int
     ) -> Node? {
         Node(
             ts_node_named_descendant_for_byte_range(
                 node,
-                startByte,
-                endByte
+                CUnsignedInt(startByte),
+                CUnsignedInt(endByte)
             )
         )
     }
 
     /// Get the smallest named node within this node that spans the given range.
-    public func namedDescendant(for byteRange: Range<CUnsignedInt>) -> Node? {
+    public func namedDescendant(for byteRange: Range<Int>) -> Node? {
         namedDescendantFor(
             startByte: byteRange.lowerBound,
             endByte: byteRange.upperBound
@@ -343,8 +348,8 @@ public struct Node {
     /// Get the smallest named node within this node that spans the given range.
     public func namedDescendant(for nsRange: NSRange) -> Node? {
         namedDescendantFor(
-            startByte: CUnsignedInt(nsRange.lowerBound),
-            endByte: CUnsignedInt(nsRange.upperBound)
+            startByte: nsRange.lowerBound,
+            endByte: nsRange.upperBound
         )
     }
     
